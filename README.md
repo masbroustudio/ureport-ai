@@ -103,6 +103,10 @@ Dokumentasi lengkap tersedia di folder `/docs`:
 | [DEVELOPMENT_GUIDE.md](./docs/DEVELOPMENT_GUIDE.md) | Panduan setup dan development |
 | [MEMORY.md](./docs/MEMORY.md) | Keputusan arsitektur (ADR) dan catatan project |
 
+### 📘 Alternative Blueprint (v2)
+
+Tersedia juga blueprint **alternatif** dengan stack yang lebih AI-native (FastAPI + Qdrant + Plotly + WeasyPrint + LiteLLM + LangGraph) di folder [`docs/v2/`](./docs/v2/). Lihat [`docs/v2/README.md`](./docs/v2/README.md) untuk perbandingan & cara memilih antara blueprint awal vs v2.
+
 ## Project Structure
 
 ```
