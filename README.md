@@ -2,9 +2,9 @@
 
 > Platform AI Assistant untuk Analisis Data dan Pembuatan Laporan Terstruktur
 
-[![Next.js](https://img.shields.io/badge/Next.js-14+-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Python](https://img.shields.io/badge/Python-3.11+-green?style=flat-square&logo=python)](https://python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-green?style=flat-square&logo=python)](https://python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 
 ## Apa itu uReport AI?
@@ -12,8 +12,8 @@
 uReport AI adalah aplikasi chat berbasis AI yang dirancang khusus untuk:
 
 1. **Analisis Data** - Upload file Excel/CSV, tanyakan apa saja tentang data, AI menjawab dengan tabel dan grafik
-2. **Visualisasi Interaktif** - AI menghasilkan chart (bar, line, pie, scatter, dll.) langsung di chat
-3. **Pembuatan Laporan** - Generate laporan terstruktur (BAB I s/d BAB V) dengan bantuan AI dan export ke PDF
+2. **Visualisasi Interaktif** - AI menghasilkan chart interaktif (bar, line, pie, scatter, heatmap) langsung di chat
+3. **Pembuatan Laporan** - Generate laporan terstruktur (BAB I s/d BAB V) dengan bantuan AI dan export ke PDF profesional
 4. **Multi-LLM** - Pilih AI provider sesuai kebutuhan: Cerebras, Groq, Gemini, atau Sumopod (custom)
 5. **RAG (Knowledge Base)** - Upload dokumen referensi, AI gunakan sebagai konteks untuk laporan yang lebih kaya
 
@@ -24,10 +24,10 @@ uReport AI adalah aplikasi chat berbasis AI yang dirancang khusus untuk:
 | Chat AI | Percakapan dengan AI (streaming real-time) |
 | File Upload | Upload Excel (.xlsx) dan CSV untuk analisis |
 | Table Response | AI merespons dengan tabel data interaktif |
-| Chart Response | AI merespons dengan grafik (bar, line, pie, dll.) |
+| Chart Response | AI merespons dengan grafik interaktif (Plotly) |
 | Multi-LLM | Switch antara Cerebras, Groq, Gemini, Sumopod |
 | Report Generation | Laporan otomatis dengan struktur BAB |
-| PDF Export | Export laporan ke PDF profesional |
+| PDF Export | Export laporan ke PDF profesional (WeasyPrint) |
 | RAG/Knowledge Base | Enrichment dengan dokumen referensi |
 | Dark Mode | Tema gelap untuk kenyamanan mata |
 
@@ -35,24 +35,24 @@ uReport AI adalah aplikasi chat berbasis AI yang dirancang khusus untuk:
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | Next.js 14+, TypeScript, Tailwind CSS, shadcn/ui, Recharts |
-| **Backend API** | Next.js API Routes, Vercel AI SDK |
-| **Data Processing** | Python FastAPI, pandas, openpyxl |
-| **Database** | PostgreSQL 16 + pgvector |
-| **AI/LLM** | Cerebras, Groq, Gemini, Sumopod |
-| **RAG** | LangChain, pgvector, text embeddings |
-| **File Storage** | MinIO (S3-compatible) |
-| **Queue** | Redis + BullMQ |
-| **PDF** | Puppeteer |
-| **Deployment** | Docker, Docker Compose |
+| **Frontend** | Next.js 15, React 19, TypeScript, TailwindCSS, shadcn/ui, Plotly.js |
+| **Backend** | Python 3.12, FastAPI, Pydantic v2 |
+| **Database** | PostgreSQL 16, SQLAlchemy, Alembic |
+| **LLM** | LiteLLM, LangGraph |
+| **RAG** | LlamaIndex, Qdrant, bge-m3 |
+| **Data** | pandas, Plotly, E2B sandbox |
+| **Reports** | Jinja2, WeasyPrint |
+| **Queue** | Celery 5, Redis 7 |
+| **Storage** | S3-compatible (MinIO/R2) |
+| **Auth** | Auth.js (NextAuth v5) |
+| **Deploy** | Docker, Docker Compose |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 20+
-- Bun 1.0+
-- Python 3.11+
+- Node.js 20+ & pnpm
+- Python 3.12+ & uv
 - Docker & Docker Compose
 - API keys (Groq, Cerebras, atau Gemini - minimal satu)
 
@@ -63,63 +63,76 @@ uReport AI adalah aplikasi chat berbasis AI yang dirancang khusus untuk:
 git clone https://github.com/YOUR_USERNAME/ureport-ai.git
 cd ureport-ai
 
-# 2. Install dependencies
-bun install
+# 2. Start infrastructure
+docker compose -f infra/docker/compose.dev.yml up -d
 
-# 3. Start infrastructure
-docker compose up -d postgres redis minio
-
-# 4. Setup environment
+# 3. Setup environment
 cp .env.example .env
 # Edit .env dengan API keys kamu
 
-# 5. Setup database
-bunx prisma generate
-bunx prisma migrate dev
+# 4. Install frontend dependencies
+cd apps/web && pnpm install
 
-# 6. Start development
-bun run dev                    # Terminal 1: Next.js
-cd services/python && uvicorn main:app --reload  # Terminal 2: Python
+# 5. Install backend dependencies
+cd apps/api && uv sync
+
+# 6. Run database migrations
+cd apps/api && alembic upgrade head
+
+# 7. Start development
+pnpm --filter web dev          # Terminal 1: Next.js
+cd apps/api && uvicorn app.main:app --reload  # Terminal 2: FastAPI
 ```
 
 ### Access
 
 - **App:** http://localhost:3000
-- **Python API Docs:** http://localhost:8000/docs
+- **API Docs:** http://localhost:8000/docs
 - **MinIO Console:** http://localhost:9001
 
 ## Documentation
 
-Dokumentasi lengkap tersedia di folder `/docs`:
+Dokumentasi lengkap tersedia di [`MASTERPLAN.md`](./MASTERPLAN.md) dan folder `docs/`:
 
 | Document | Content |
 |----------|---------|
-| [BLUEPRINT.md](./docs/BLUEPRINT.md) | Masterplan project, fitur, timeline, dan user flow |
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Arsitektur teknis, diagram, dan design patterns |
-| [DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md) | Database design, ER diagram, dan tabel |
-| [TECHSTACK.md](./docs/TECHSTACK.md) | Penjelasan setiap teknologi dan learning resources |
-| [SKILLS_REQUIRED.md](./docs/SKILLS_REQUIRED.md) | Skills yang dibutuhkan dan path belajar |
-| [API_DESIGN.md](./docs/API_DESIGN.md) | Spesifikasi semua API endpoints |
-| [DEVELOPMENT_GUIDE.md](./docs/DEVELOPMENT_GUIDE.md) | Panduan setup dan development |
-| [MEMORY.md](./docs/MEMORY.md) | Keputusan arsitektur (ADR) dan catatan project |
+| [MASTERPLAN.md](./MASTERPLAN.md) | Ringkasan produk, arsitektur, dan navigasi dokumentasi |
+| [01-vision-and-scope.md](./docs/01-vision-and-scope.md) | Visi, target user, problem, scope |
+| [02-tech-stack.md](./docs/02-tech-stack.md) | Pilihan tech & rasional per-teknologi |
+| [03-architecture.md](./docs/03-architecture.md) | Arsitektur sistem & data flow |
+| [04-features-and-user-flows.md](./docs/04-features-and-user-flows.md) | Fitur detail + user journey |
+| [05-llm-providers.md](./docs/05-llm-providers.md) | Strategi multi-LLM |
+| [06-rag-and-knowledge.md](./docs/06-rag-and-knowledge.md) | RAG: ingestion, chunking, retrieval |
+| [07-data-analysis-engine.md](./docs/07-data-analysis-engine.md) | Excel/CSV analyzer, charting |
+| [08-report-generation.md](./docs/08-report-generation.md) | PDF report generation |
+| [09-database-schema.md](./docs/09-database-schema.md) | Database schema & ERD |
+| [10-api-design.md](./docs/10-api-design.md) | API contract & endpoints |
+| [11-frontend-design.md](./docs/11-frontend-design.md) | UI/UX & komponen frontend |
+| [12-agent-skills-and-memory.md](./docs/12-agent-skills-and-memory.md) | Skill registry + memory |
+| [13-roadmap-and-milestones.md](./docs/13-roadmap-and-milestones.md) | Roadmap MVP → V1 → V2 |
+| [14-deployment-and-ops.md](./docs/14-deployment-and-ops.md) | Deployment & monitoring |
+| [15-security-and-compliance.md](./docs/15-security-and-compliance.md) | Security & privacy |
+| [16-skills-and-learning-path.md](./docs/16-skills-and-learning-path.md) | Skills & learning path |
+| [17-development-guide.md](./docs/17-development-guide.md) | Development workflow |
+| [decisions/ADR-001-to-006.md](./docs/decisions/ADR-001-to-006.md) | Architecture Decision Records |
 
 ## Project Structure
 
 ```
 ureport-ai/
-├── src/                    # Next.js application
-│   ├── app/               # Pages & API routes
-│   ├── components/        # UI components
-│   ├── lib/               # Utilities & integrations
-│   ├── hooks/             # Custom React hooks
-│   ├── store/             # State management (Zustand)
-│   └── types/             # TypeScript types
-├── services/
-│   └── python/            # FastAPI data processing service
-├── prisma/                # Database schema & migrations
-├── docs/                  # Project documentation
-├── docker/                # Docker configurations
-└── workers/               # Background job workers
+├── apps/
+│   ├── web/                # Next.js 15 frontend
+│   └── api/                # FastAPI backend
+├── packages/
+│   ├── shared-types/       # TypeScript types (auto-gen dari OpenAPI)
+│   └── prompts/            # Prompt library (markdown)
+├── infra/
+│   └── docker/             # Docker Compose configs
+├── docs/                   # Project documentation (17 files + decisions/)
+├── scripts/                # Utility scripts
+├── .kiro/                  # Steering & config
+├── MASTERPLAN.md           # Project masterplan
+└── README.md
 ```
 
 ## Development Phases
@@ -129,7 +142,7 @@ ureport-ai/
 - **Phase 3:** RAG + Report Generation + PDF Export
 - **Phase 4:** Polish + Optimization + Deployment
 
-Detail lengkap ada di [BLUEPRINT.md](./docs/BLUEPRINT.md).
+Detail lengkap ada di [docs/13-roadmap-and-milestones.md](./docs/13-roadmap-and-milestones.md).
 
 ## Contributing
 
