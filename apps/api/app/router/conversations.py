@@ -7,10 +7,13 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.data.prompts import build_data_analysis_system_prompt, extract_code_from_response
+from app.data.sandbox import SandboxExecutor
 from app.deps import get_current_user, get_db
 from app.llm.client import stream_chat_completion
 from app.llm.router import get_default_model
 from app.model.conversation import Conversation
+from app.model.file import File
 from app.model.message import Message
 from app.model.usage_log import UsageLog
 from app.model.user import User
@@ -21,6 +24,7 @@ from app.schema.conversation import (
     MessageCreate,
     MessageResponse,
 )
+from app.service.files import get_full_path
 from app.settings import settings
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -209,6 +213,25 @@ async def create_message(
     history = list(reversed(history_result.scalars().all()))
     messages_for_llm = [{"role": m.role, "content": m.content} for m in history if m.content]
 
+    # If file_ids provided, load profiles and prepend data analysis system prompt
+    file_records = []
+    if request.file_ids:
+        file_result = await db.execute(
+            select(File).where(
+                File.id.in_([uuid.UUID(fid) for fid in request.file_ids]),
+                File.user_id == current_user.id,
+            )
+        )
+        file_records = list(file_result.scalars().all())
+
+        if file_records:
+            # Use the first file's profile for system prompt
+            for fr in file_records:
+                if fr.profile_json:
+                    system_prompt = build_data_analysis_system_prompt(fr.profile_json)
+                    messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
+                    break
+
     # Determine model
     model = request.model
     if not model:
@@ -260,6 +283,31 @@ async def create_message(
                 "usage": usage_info,
             })
             yield f"event: done\ndata: {done_data}\n\n"
+
+            # If files are attached, check for code in response and execute
+            if file_records and accumulated_text:
+                code = extract_code_from_response(accumulated_text)
+                if code:
+                    yield f"event: code\ndata: {json.dumps({'code': code})}\n\n"
+
+                    # Execute code against the first file
+                    target_file = file_records[0]
+                    full_path = get_full_path(target_file.storage_path, settings)
+                    executor = SandboxExecutor(
+                        timeout=settings.DATA_SANDBOX_TIMEOUT_SECONDS
+                    )
+                    exec_result = executor.execute(code, full_path, target_file.mime)
+
+                    if exec_result.chart_spec:
+                        yield f"event: chart\ndata: {json.dumps(exec_result.chart_spec, default=str)}\n\n"
+                    if exec_result.table_data:
+                        table_payload = {
+                            "columns": list(exec_result.table_data[0].keys()) if exec_result.table_data else [],
+                            "rows": exec_result.table_data,
+                        }
+                        yield f"event: table\ndata: {json.dumps(table_payload, default=str)}\n\n"
+                    if exec_result.error:
+                        yield f"event: error\ndata: {json.dumps({'detail': exec_result.error})}\n\n"
 
         except Exception as e:
             # Persist partial assistant message if any text was accumulated

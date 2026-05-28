@@ -31,6 +31,7 @@ class ConversationResponse(BaseModel):
 class MessageCreate(BaseModel):
     content: str
     model: str | None = None
+    file_ids: list[str] | None = None
 
 
 class MessageResponse(BaseModel):

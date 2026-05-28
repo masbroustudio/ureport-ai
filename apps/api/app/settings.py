@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     SUMOPOD_API_KEY: str = ""
     SUMOPOD_BASE_URL: str = ""
+    FILE_STORAGE_PATH: str = "./storage/uploads"
+    DATA_SANDBOX_TIMEOUT_SECONDS: int = 30
+    MAX_UPLOAD_SIZE_MB: int = 50
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
