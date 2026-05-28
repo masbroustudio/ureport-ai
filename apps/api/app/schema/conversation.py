@@ -32,6 +32,7 @@ class MessageCreate(BaseModel):
     content: str
     model: str | None = None
     file_ids: list[str] | None = None
+    kb_document_ids: list[str] | None = None
 
 
 class MessageResponse(BaseModel):

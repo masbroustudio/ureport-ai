@@ -18,6 +18,7 @@ from app.model.file import File
 from app.model.message import Message
 from app.model.usage_log import UsageLog
 from app.model.user import User
+from app.rag.retriever import retrieve
 from app.schema.conversation import (
     ConversationCreate,
     ConversationResponse,
@@ -233,6 +234,29 @@ async def create_message(
                     messages_for_llm.insert(0, {"role": "system", "content": system_prompt})
                     break
 
+    # RAG: If kb_document_ids provided, retrieve relevant chunks and add context
+    rag_results = []
+    if request.kb_document_ids:
+        rag_results = await retrieve(
+            user_id=str(current_user.id),
+            query=request.content,
+            document_ids=request.kb_document_ids,
+        )
+        if rag_results:
+            rag_context_parts = [
+                "Use the following knowledge base context to answer. "
+                "Cite sources using [^N] notation.\n"
+            ]
+            for i, result in enumerate(rag_results):
+                source_info = f"Source: {result.document_name}"
+                if result.page:
+                    source_info += f", Page {result.page}"
+                rag_context_parts.append(
+                    f"[^{i + 1}] {source_info}\n{result.text}"
+                )
+            rag_system_msg = "\n\n".join(rag_context_parts)
+            messages_for_llm.insert(0, {"role": "system", "content": rag_system_msg})
+
     # Determine model
     model = request.model
     if not model:
@@ -311,6 +335,19 @@ async def create_message(
                 "message_id": str(assistant_message.id),
                 "usage": usage_info,
             })
+
+            # Emit citation events for RAG results before done
+            if rag_results:
+                for i, result in enumerate(rag_results):
+                    citation_data = json.dumps({
+                        "id": str(i + 1),
+                        "doc_name": result.document_name,
+                        "page": result.page,
+                        "text": result.text[:200],
+                        "section": result.section,
+                    })
+                    yield f"event: citation\ndata: {citation_data}\n\n"
+
             yield f"event: done\ndata: {done_data}\n\n"
 
         except Exception as e:

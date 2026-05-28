@@ -24,6 +24,10 @@ dependencies = [
     "pandas",
     "openpyxl",
     "plotly",
+    "pymupdf",
+    "python-docx",
+    "fastembed",
+    "tiktoken",
 ]
 
 [dependency-groups]
