@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Paperclip, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { apiJson } from "@/lib/api";
+import { apiJson, API_BASE } from "@/lib/api";
 
 const AVAILABLE_MODELS = [
   { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)" },
@@ -71,8 +71,6 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const res = await fetch(`${API_BASE}/api/v1/files`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},

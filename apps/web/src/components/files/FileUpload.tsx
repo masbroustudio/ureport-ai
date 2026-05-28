@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api";
 
 interface FileInfo {
   id: string;
@@ -36,8 +37,6 @@ export function FileUpload({ onFileUploaded }: FileUploadProps) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const API_BASE =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const res = await fetch(`${API_BASE}/api/v1/files`, {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : {},

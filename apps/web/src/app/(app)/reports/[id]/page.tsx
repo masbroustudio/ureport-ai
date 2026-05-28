@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { apiJson, apiFetch } from "@/lib/api";
+import { apiJson, apiFetch, API_BASE } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
 interface OutlineSection {
@@ -47,8 +47,6 @@ interface Section {
   status: string;
   word_count: number;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function ReportDetailPage() {
   const params = useParams();

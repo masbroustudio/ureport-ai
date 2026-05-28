@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api";
 
 interface KBUploadProps {
   onUpload: () => void;
@@ -55,8 +56,6 @@ export function KBUpload({ onUpload }: KBUploadProps) {
       if (title.trim()) formData.append("title", title.trim());
       if (tags.trim()) formData.append("tags", tags.trim());
 
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const res = await fetch(`${API_BASE}/api/v1/kb/documents`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
