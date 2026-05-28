@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-005",
+  "type": "docs",
+  "description": "Final documentation and README update: DEPLOYMENT.md, PHASE5-README.md, updated README.md. Covers task items #11 and #12 (final verification).",
+  "status": "pending",
+  "steps": [
+    "Step 1: Create docs/DEPLOYMENT.md - Comprehensive production deployment guide covering: Prerequisites (Docker 24+, domain, SSL cert, API keys for LLM providers), Docker Compose production setup (step by step), complete environment variables list with descriptions and defaults, database migration with Alembic, Nginx + SSL configuration (certbot instructions), backup strategy (postgres pg_dump, minio mc mirror, qdrant snapshots), monitoring setup (Prometheus + Grafana suggestion, Sentry), scaling considerations (horizontal scaling API, read replicas, Redis cluster), troubleshooting common issues.",
+    "Step 2: Create docs/PHASE5-README.md - Document what was implemented in Phase 5: onboarding flow, empty states, error handling, mobile responsive, dark mode polish, PWA, Dockerfiles, monitoring/health, rate limiting, privacy/terms pages, deployment docs.",
+    "Step 3: Update README.md - Change 'Phase 0 (Current)' to show all 5 phases as completed. Update the Development Phases section to reflect all phases done. Add a 'Deployment' section pointing to docs/DEPLOYMENT.md. Ensure the feature table is up to date with Phase 5 additions (PWA, Rate Limiting, Monitoring).",
+    "Step 4: Run final verification: `uv run pytest tests/ -v` in apps/api (all tests pass), `pnpm build` in apps/web (build succeeds), `uv run ruff check .` in apps/api (clean)."
+  ],
+  "acceptance_criteria": [
+    "docs/DEPLOYMENT.md exists with all required sections",
+    "docs/PHASE5-README.md exists documenting Phase 5 implementations",
+    "README.md reflects all 5 phases completed",
+    "All backend tests pass (127+)",
+    "pnpm build succeeds",
+    "Ruff check clean"
+  ],
+  "verification": [
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/web && pnpm build",
+    "cd apps/api && uv run ruff check ."
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

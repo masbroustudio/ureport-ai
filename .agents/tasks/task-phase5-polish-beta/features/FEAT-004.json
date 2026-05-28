@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Production infrastructure: Dockerfiles for API and Web, Docker Compose production config, Privacy/Terms pages, footer links on landing page. Covers task items #7 and #10.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Create apps/api/Dockerfile - Multi-stage build: Stage 1 (builder) uses python:3.12-slim, installs uv, copies pyproject.toml and uv.lock, runs `uv sync --no-dev`. Stage 2 (runtime) uses python:3.12-slim, installs WeasyPrint system deps (libpango, libcairo, etc.), copies virtual env from builder, copies app/ directory. Sets CMD to uvicorn app.main:app --host 0.0.0.0 --port 8000. Exposes 8000.",
+    "Step 2: Create apps/web/Dockerfile - Multi-stage build: Stage 1 (deps) uses node:22-alpine, installs pnpm, copies package.json and pnpm-lock.yaml, runs pnpm install --frozen-lockfile. Stage 2 (builder) copies source, runs pnpm build. Stage 3 (runner) uses node:22-alpine, copies .next/standalone and .next/static and public. CMD node server.js. Exposes 3000.",
+    "Step 3: Update apps/web/next.config.mjs to add output: 'standalone' for Docker deployment.",
+    "Step 4: Update infra/docker/compose.prod.yml with full production stack: services for api (build from apps/api/Dockerfile), web (build from apps/web/Dockerfile), postgres:16 (with volume), redis:7-alpine, qdrant/qdrant (with volume), minio (with volume), nginx (reverse proxy with ports 80/443). Include environment variables, health checks, restart policies, network isolation, and depends_on.",
+    "Step 5: Create infra/docker/nginx.conf - Nginx reverse proxy config: route /api/* to api:8000, route everything else to web:3000, include SSL placeholder comments, proxy headers (X-Real-IP, X-Forwarded-For, X-Request-ID), WebSocket upgrade for SSE.",
+    "Step 6: Create apps/web/src/app/(marketing)/layout.tsx - Simple layout for marketing pages with a header (link to home) and footer.",
+    "Step 7: Create apps/web/src/app/(marketing)/privacy/page.tsx - Basic privacy policy page in Bahasa Indonesia. Cover: data collected, how it's used, storage, third-party services, user rights, contact.",
+    "Step 8: Create apps/web/src/app/(marketing)/terms/page.tsx - Basic terms of service page in Bahasa Indonesia. Cover: acceptance, service description, usage rules, intellectual property, limitation of liability, termination, changes.",
+    "Step 9: Update apps/web/src/app/page.tsx (landing page) - Add a footer section with links to /privacy and /terms pages, plus copyright notice.",
+    "Step 10: Run `pnpm build` in apps/web/ to verify all new pages compile. Run `uv run ruff check .` in apps/api/."
+  ],
+  "acceptance_criteria": [
+    "apps/api/Dockerfile exists with multi-stage build including WeasyPrint deps",
+    "apps/web/Dockerfile exists with multi-stage Next.js standalone build",
+    "next.config.mjs has output: 'standalone'",
+    "infra/docker/compose.prod.yml defines api, web, postgres, redis, qdrant, minio, nginx services",
+    "infra/docker/nginx.conf routes API and web traffic correctly",
+    "Privacy policy page accessible at /privacy",
+    "Terms of service page accessible at /terms",
+    "Landing page has footer with links to privacy and terms",
+    "pnpm build succeeds",
+    "Ruff check clean"
+  ],
+  "verification": [
+    "cd apps/web && pnpm build",
+    "cd apps/api && uv run ruff check ."
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
