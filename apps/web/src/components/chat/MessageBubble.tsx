@@ -14,6 +14,8 @@ interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  isFailed?: boolean;
+  onRetry?: () => void;
   chartSpec?: { data: unknown[]; layout?: Record<string, unknown> };
   tableData?: { columns: string[]; rows: Record<string, unknown>[] };
   executedCode?: string;
@@ -24,6 +26,8 @@ export function MessageBubble({
   role,
   content,
   isStreaming,
+  isFailed,
+  onRetry,
   chartSpec,
   tableData,
   executedCode,
@@ -130,6 +134,18 @@ export function MessageBubble({
               ))}
             </div>
           </div>
+        )}
+
+        {isFailed && onRetry && (
+          <button
+            onClick={onRetry}
+            className="mt-2 inline-flex items-center gap-1 px-2 py-1 border border-border rounded text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Coba lagi
+          </button>
         )}
       </div>
     </div>

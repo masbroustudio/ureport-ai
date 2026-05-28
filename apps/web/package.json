@@ -24,7 +24,8 @@
     "highlight.js": "^11.9.0",
     "react-plotly.js": "^2.6.0",
     "plotly.js-dist-min": "^2.35.0",
-    "@tanstack/react-table": "^8.20.0"
+    "@tanstack/react-table": "^8.20.0",
+    "sonner": "^1.7.0"
   },
   "devDependencies": {
     "typescript": "^5",

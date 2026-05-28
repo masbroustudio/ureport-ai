@@ -16,6 +16,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  isFailed?: boolean;
   chartSpec?: { data: unknown[]; layout?: Record<string, unknown> };
   tableData?: { columns: string[]; rows: Record<string, unknown>[] };
   executedCode?: string;
@@ -31,10 +32,12 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failedMessageIndex, setFailedMessageIndex] = useState<number | null>(null);
 
   const sendMessage = useCallback(
     async (content: string, model?: string, fileIds?: string[], kbDocumentIds?: string[]) => {
       setError(null);
+      setFailedMessageIndex(null);
 
       const userMessage: ChatMessage = { role: "user", content };
       const assistantMessage: ChatMessage = {
@@ -182,7 +185,9 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
                     ...last,
                     content: "An error occurred while generating a response.",
                     isStreaming: false,
+                    isFailed: true,
                   };
+                  setFailedMessageIndex(updated.length - 1);
                 }
                 return updated;
               });
@@ -190,7 +195,8 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to send message");
+        const errMsg = err instanceof Error ? err.message : "Failed to send message";
+        setError(errMsg);
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
@@ -199,7 +205,9 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
               ...last,
               content: "Failed to get a response. Please try again.",
               isStreaming: false,
+              isFailed: true,
             };
+            setFailedMessageIndex(updated.length - 1);
           }
           return updated;
         });
@@ -210,5 +218,23 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
     [conversationId]
   );
 
-  return { messages, setMessages, isStreaming, error, sendMessage };
+  const retry = useCallback(() => {
+    if (failedMessageIndex === null) return;
+    setMessages((prev) => {
+      const userMsgIndex = failedMessageIndex - 1;
+      if (userMsgIndex < 0) return prev;
+      const userMsg = prev[userMsgIndex];
+      if (!userMsg || userMsg.role !== "user") return prev;
+      // Remove the failed pair
+      const updated = prev.slice(0, userMsgIndex);
+      setMessages(updated);
+      // Resend
+      setTimeout(() => {
+        sendMessage(userMsg.content);
+      }, 0);
+      return updated;
+    });
+  }, [failedMessageIndex, sendMessage]);
+
+  return { messages, setMessages, isStreaming, error, sendMessage, retry, failedMessageIndex };
 }

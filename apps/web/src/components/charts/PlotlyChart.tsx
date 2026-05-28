@@ -19,11 +19,24 @@ interface PlotlyChartProps {
 }
 
 export function PlotlyChart({ spec }: PlotlyChartProps) {
+  const isDark =
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("dark");
+
   const layout = {
     autosize: true,
     paper_bgcolor: "transparent",
     plot_bgcolor: "transparent",
-    font: { family: "inherit" },
+    font: {
+      family: "inherit",
+      ...(isDark ? { color: "#e2e8f0" } : {}),
+    },
+    ...(isDark
+      ? {
+          xaxis: { color: "#94a3b8", gridcolor: "#334155" },
+          yaxis: { color: "#94a3b8", gridcolor: "#334155" },
+        }
+      : {}),
     ...(spec.layout || {}),
   };
 

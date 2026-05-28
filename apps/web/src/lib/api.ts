@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function apiFetch(
@@ -14,10 +16,16 @@ export async function apiFetch(
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
+    if (res.status === 429) {
+      const msg = "Terlalu banyak permintaan, tunggu sebentar";
+      toast.error(msg);
+      throw new Error(msg);
+    }
     const error = await res.json().catch(() => ({ message: "Request failed" }));
-    throw new Error(
-      error.error?.message || error.message || "Request failed"
-    );
+    const errorMsg =
+      error.error?.message || error.message || "Request failed";
+    toast.error(errorMsg);
+    throw new Error(errorMsg);
   }
   return res;
 }

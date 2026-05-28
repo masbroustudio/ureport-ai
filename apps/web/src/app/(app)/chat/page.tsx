@@ -6,10 +6,10 @@ import { apiJson } from "@/lib/api";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 
 const PROMPT_SUGGESTIONS = [
-  "Analyze sales data for Q4 2024",
-  "Generate a summary report from my uploaded CSV",
-  "Help me understand trends in customer feedback",
-  "Create a data visualization for monthly revenue",
+  "Upload Excel & minta saya analisa",
+  "Bikin laporan penjualan dari data ini",
+  "Bandingkan 2 dataset",
+  "Eksplorasi statistik dasar",
 ];
 
 export default function ChatPage() {
@@ -39,9 +39,9 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <h1 className="text-2xl font-bold mb-2">Welcome to uReport AI</h1>
+        <h1 className="text-2xl font-bold mb-2">Selamat datang di uReport AI</h1>
         <p className="text-muted-foreground mb-6">
-          Start a conversation with your AI assistant.
+          Mulai percakapan dengan asisten AI Anda.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg w-full">
           {PROMPT_SUGGESTIONS.map((prompt) => (

@@ -1,0 +1,50 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Frontend UX enhancements: Onboarding modal, empty states with Indonesian prompt suggestions, error handling with toast/retry/offline banner, mobile responsive sidebar (Sheet), dark mode polish, and PWA support. Covers task items #1-6.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Install sonner package: add 'sonner' to apps/web/package.json dependencies and run pnpm install.",
+    "Step 2: Create apps/web/src/components/onboarding/OnboardingModal.tsx - A 3-step modal component shown on first login (check localStorage 'onboarding_done' flag). Step 1: Welcome + choose default LLM provider (dropdown of AVAILABLE_MODELS). Step 2: Upload your first file (drag-drop area or Skip button). Step 3: Try a sample prompt (pre-fill suggestion or Skip). After completion: set onboarding_done=true in localStorage, redirect to /chat. Use Tailwind for styling, no external modal library needed (use fixed positioning + backdrop).",
+    "Step 3: Update apps/web/src/app/(app)/layout.tsx to conditionally show OnboardingModal when localStorage 'onboarding_done' is not set and user is logged in.",
+    "Step 4: Update apps/web/src/app/(app)/chat/page.tsx - Replace English prompt suggestions with Indonesian ones: 'Upload Excel & minta saya analisa', 'Bikin laporan penjualan dari data ini', 'Bandingkan 2 dataset', 'Eksplorasi statistik dasar'. Style as cards with icons.",
+    "Step 5: Update apps/web/src/app/(app)/knowledge/page.tsx - When documents list is empty, show an illustration placeholder (SVG or emoji-based) with CTA text 'Upload dokumen pertama Anda' and an upload button.",
+    "Step 6: Update apps/web/src/app/(app)/reports/page.tsx - When reports list is empty, show illustration + CTA 'Buat laporan pertama' with a link to /reports/new.",
+    "Step 7: Update apps/web/src/components/chat/ChatSidebar.tsx - When conversations list is empty show friendly message 'Mulai chat baru' with a new chat button.",
+    "Step 8: Create apps/web/src/components/ui/Toaster.tsx - Wrapper around Sonner's Toaster component. Export a toast utility for showing error/success/info toasts.",
+    "Step 9: Add the Toaster component to apps/web/src/app/layout.tsx (root layout) so toasts appear globally.",
+    "Step 10: Update apps/web/src/lib/api.ts - On 429 response, throw specific error with message 'Terlalu banyak permintaan, tunggu sebentar'. On other errors, show toast notification using sonner.",
+    "Step 11: Update apps/web/src/hooks/useChat.ts - When SSE stream fails, add an 'error' flag and 'retryFn' to the failed message object so the UI can show a 'Coba lagi' button. Add a retry function that resends the last user message.",
+    "Step 12: Update apps/web/src/components/chat/MessageBubble.tsx - When a message has error state, show a 'Coba lagi' (retry) button below the failed message.",
+    "Step 13: Create apps/web/src/components/ui/OfflineBanner.tsx - Component that uses navigator.onLine and 'online'/'offline' events to show a top banner 'Koneksi terputus' when offline, auto-hides when reconnected.",
+    "Step 14: Add OfflineBanner to apps/web/src/app/(app)/layout.tsx.",
+    "Step 15: Make ChatSidebar mobile-responsive: On screens < 768px, hide the static sidebar and show a hamburger menu button that opens the sidebar as an off-canvas panel (use fixed positioning + transform for slide-in animation, or a simple Sheet-like component). Add the toggle button in the app layout header area.",
+    "Step 16: Make ChatComposer sticky at the bottom on mobile (it already is border-t, just ensure it stays fixed at viewport bottom on small screens).",
+    "Step 17: Dark mode polish: Update apps/web/src/components/charts/PlotlyChart.tsx to detect dark mode (check document.documentElement classList for 'dark') and pass dark paper_bgcolor and font color to Plotly layout. Ensure globals.css highlight.js import uses a dark-friendly theme (already using github-dark.css which is fine).",
+    "Step 18: PWA support - Create apps/web/public/manifest.json with name 'uReport AI', short_name 'uReport', theme_color '#1e293b', background_color '#0f172a', display 'standalone', icons array pointing to /icons/icon-192.svg and /icons/icon-512.svg.",
+    "Step 19: Create apps/web/public/icons/icon-192.svg and apps/web/public/icons/icon-512.svg - Simple placeholder SVG icons (a chart/document icon with 'uR' text).",
+    "Step 20: Create apps/web/public/sw.js - Basic service worker that caches the app shell (HTML, CSS, JS assets) using cache-first strategy for static assets.",
+    "Step 21: Update apps/web/src/app/layout.tsx - Add PWA meta tags (theme-color, apple-touch-icon, manifest link) in metadata export. Add service worker registration script.",
+    "Step 22: Run `pnpm build` in apps/web/ to verify everything compiles successfully."
+  ],
+  "acceptance_criteria": [
+    "OnboardingModal appears on first login (no onboarding_done in localStorage) with 3 steps",
+    "Chat page shows 4 Indonesian prompt suggestions when no conversation selected",
+    "Knowledge page shows empty state CTA when no documents",
+    "Reports page shows empty state CTA when no reports",
+    "Sidebar shows 'Mulai chat baru' when no conversations",
+    "Sonner toasts appear on API errors",
+    "Failed SSE messages show 'Coba lagi' retry button",
+    "OfflineBanner shows when navigator.onLine is false",
+    "Sidebar collapses to off-canvas on mobile (<768px)",
+    "Plotly charts use dark background in dark mode",
+    "PWA manifest.json exists and is linked from layout",
+    "Service worker file exists at public/sw.js",
+    "pnpm build succeeds without errors"
+  ],
+  "verification": [
+    "cd apps/web && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
