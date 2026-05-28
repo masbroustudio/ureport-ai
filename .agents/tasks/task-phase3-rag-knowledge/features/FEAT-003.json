@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Frontend: Knowledge Base page, citation rendering in chat, and KB document selector in chat composer",
+  "status": "pending",
+  "steps": [
+    "1. Create apps/web/src/app/(app)/knowledge/page.tsx: Knowledge Base page with document list (card grid showing name, status badge, chunk_count, tags, upload date), upload button for PDF/DOCX/TXT (drag-drop or click), delete button per document, and a search box for testing RAG search.",
+    "2. Create apps/web/src/components/knowledge/KBDocumentCard.tsx: card component showing document info with status badge (processing=yellow, ready=green, failed=red), chunk count, and delete button.",
+    "3. Create apps/web/src/components/knowledge/KBUpload.tsx: file upload component accepting PDF/DOCX/TXT, with drag-and-drop support, calling POST /api/v1/kb/documents.",
+    "4. Create apps/web/src/components/knowledge/KBSearch.tsx: search input + results display for testing RAG queries via POST /api/v1/kb/search.",
+    "5. Modify apps/web/src/hooks/useChat.ts: add 'citation' event handling in SSE processing. Add citations field to ChatMessage type. Store citation data when event: citation is received.",
+    "6. Modify apps/web/src/components/chat/MessageBubble.tsx: detect [^N] patterns in assistant text, render as superscript badges. On click, show a tooltip/popover with cited chunk text, source doc name, and page number. Accept citations prop.",
+    "7. Modify apps/web/src/components/chat/ChatComposer.tsx: add a 'Use Knowledge Base' toggle or document selector dropdown. When enabled, include kb_document_ids in the message payload sent via onSend. Fetch available KB documents from GET /api/v1/kb/documents.",
+    "8. Modify apps/web/src/hooks/useChat.ts sendMessage function: accept optional kbDocumentIds parameter, include in POST body as kb_document_ids.",
+    "9. Update apps/web/src/app/(app)/chat/[id]/page.tsx to pass kbDocumentIds from composer to sendMessage.",
+    "10. Add 'Knowledge Base' link to ChatSidebar navigation (apps/web/src/components/chat/ChatSidebar.tsx) between Settings and main nav.",
+    "11. Run pnpm build in apps/web/ to verify no TypeScript errors."
+  ],
+  "acceptance_criteria": [
+    "Knowledge Base page renders at /knowledge route",
+    "Documents can be uploaded (UI shows upload component with proper file type filtering)",
+    "Document cards show status, chunk count, delete button",
+    "Citation markers [^N] in messages render as clickable superscript badges",
+    "Chat composer has KB document selector/toggle",
+    "useChat hook handles 'citation' SSE events",
+    "pnpm build passes without TypeScript errors",
+    "Sidebar has Knowledge Base navigation link"
+  ],
+  "verification": [
+    "cd apps/web && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

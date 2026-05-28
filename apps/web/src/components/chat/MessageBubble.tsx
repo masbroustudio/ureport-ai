@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { DataTable } from "@/components/tables/DataTable";
+import type { Citation } from "@/hooks/useChat";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -16,6 +17,7 @@ interface MessageBubbleProps {
   chartSpec?: { data: unknown[]; layout?: Record<string, unknown> };
   tableData?: { columns: string[]; rows: Record<string, unknown>[] };
   executedCode?: string;
+  citations?: Citation[];
 }
 
 export function MessageBubble({
@@ -25,8 +27,10 @@ export function MessageBubble({
   chartSpec,
   tableData,
   executedCode,
+  citations,
 }: MessageBubbleProps) {
   const [showCode, setShowCode] = useState(false);
+  const [activeCitation, setActiveCitation] = useState<string | null>(null);
 
   if (role === "user") {
     return (
@@ -87,6 +91,44 @@ export function MessageBubble({
                 <code>{executedCode}</code>
               </pre>
             )}
+          </div>
+        )}
+
+        {citations && citations.length > 0 && (
+          <div className="mt-3 border-t border-border pt-2">
+            <p className="text-xs text-muted-foreground mb-1">Sources:</p>
+            <div className="flex flex-wrap gap-1">
+              {citations.map((citation, idx) => (
+                <span key={citation.id} className="relative inline-block">
+                  <button
+                    onClick={() =>
+                      setActiveCitation(
+                        activeCitation === citation.id ? null : citation.id
+                      )
+                    }
+                    className="inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    {idx + 1}
+                  </button>
+                  {activeCitation === citation.id && (
+                    <div className="absolute bottom-full left-0 mb-1 w-64 p-2 rounded-md border border-border bg-popover text-popover-foreground shadow-md z-10">
+                      <p className="text-xs font-medium">{citation.doc_name}</p>
+                      {citation.page !== null && (
+                        <p className="text-xs text-muted-foreground">
+                          Page {citation.page}
+                        </p>
+                      )}
+                      {citation.section && (
+                        <p className="text-xs text-muted-foreground">
+                          {citation.section}
+                        </p>
+                      )}
+                      <p className="text-xs mt-1 line-clamp-3">{citation.text}</p>
+                    </div>
+                  )}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>

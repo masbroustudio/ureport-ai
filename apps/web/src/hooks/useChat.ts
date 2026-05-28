@@ -3,6 +3,14 @@
 import { useState, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 
+export interface Citation {
+  id: string;
+  doc_name: string;
+  page: number | null;
+  text: string;
+  section: string | null;
+}
+
 export interface ChatMessage {
   id?: string;
   role: "user" | "assistant";
@@ -11,6 +19,7 @@ export interface ChatMessage {
   chartSpec?: { data: unknown[]; layout?: Record<string, unknown> };
   tableData?: { columns: string[]; rows: Record<string, unknown>[] };
   executedCode?: string;
+  citations?: Citation[];
 }
 
 interface UseChatOptions {
@@ -24,7 +33,7 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(
-    async (content: string, model?: string, fileIds?: string[]) => {
+    async (content: string, model?: string, fileIds?: string[], kbDocumentIds?: string[]) => {
       setError(null);
 
       const userMessage: ChatMessage = { role: "user", content };
@@ -41,6 +50,7 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
         const body: Record<string, unknown> = { content };
         if (model) body.model = model;
         if (fileIds && fileIds.length > 0) body.file_ids = fileIds;
+        if (kbDocumentIds && kbDocumentIds.length > 0) body.kb_document_ids = kbDocumentIds;
 
         const res = await apiFetch(
           `/api/v1/conversations/${conversationId}/messages`,
@@ -129,6 +139,20 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
                   updated[updated.length - 1] = {
                     ...last,
                     executedCode: parsed.code || parsed.source || parsed,
+                  };
+                }
+                return updated;
+              });
+            } else if (eventType === "citation") {
+              const parsed = JSON.parse(eventData);
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === "assistant") {
+                  const existingCitations = last.citations || [];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    citations: [...existingCitations, parsed],
                   };
                 }
                 return updated;

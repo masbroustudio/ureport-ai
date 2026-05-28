@@ -95,6 +95,12 @@ export function ChatSidebar() {
       </nav>
       <div className="p-2 border-t border-border">
         <Link
+          href="/knowledge"
+          className="block px-3 py-2 rounded-md hover:bg-accent text-sm text-muted-foreground"
+        >
+          Knowledge Base
+        </Link>
+        <Link
           href="/settings"
           className="block px-3 py-2 rounded-md hover:bg-accent text-sm text-muted-foreground"
         >

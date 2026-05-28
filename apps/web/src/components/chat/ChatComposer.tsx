@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Paperclip, X } from "lucide-react";
+import { Paperclip, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { apiJson } from "@/lib/api";
 
 const AVAILABLE_MODELS = [
   { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)" },
@@ -18,8 +19,14 @@ interface AttachedFile {
 }
 
 interface ChatComposerProps {
-  onSend: (content: string, model?: string, fileIds?: string[]) => void;
+  onSend: (content: string, model?: string, fileIds?: string[], kbDocumentIds?: string[]) => void;
   disabled?: boolean;
+}
+
+interface KBDoc {
+  id: string;
+  name: string;
+  status: string;
 }
 
 export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
@@ -28,12 +35,21 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
   const [content, setContent] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [kbDocs, setKbDocs] = useState<KBDoc[]>([]);
+  const [selectedKbDocs, setSelectedKbDocs] = useState<string[]>([]);
+  const [showKbPanel, setShowKbPanel] = useState(false);
   const [model, setModel] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("default_model") || AVAILABLE_MODELS[0].id;
     }
     return AVAILABLE_MODELS[0].id;
   });
+
+  useEffect(() => {
+    apiJson<KBDoc[]>("/api/v1/kb/documents")
+      .then((data) => setKbDocs(data.filter((d) => d.status === "ready")))
+      .catch(() => {});
+  }, []);
 
   const adjustHeight = () => {
     const textarea = textareaRef.current;
@@ -93,7 +109,12 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
     const trimmed = content.trim();
     if (!trimmed || disabled) return;
     const fileIds = attachedFiles.map((f) => f.id);
-    onSend(trimmed, model, fileIds.length > 0 ? fileIds : undefined);
+    onSend(
+      trimmed,
+      model,
+      fileIds.length > 0 ? fileIds : undefined,
+      selectedKbDocs.length > 0 ? selectedKbDocs : undefined
+    );
     setContent("");
     setAttachedFiles([]);
   };
@@ -107,6 +128,34 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
 
   return (
     <div className="border-t border-border p-4">
+      {selectedKbDocs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {selectedKbDocs.map((docId) => {
+            const doc = kbDocs.find((d) => d.id === docId);
+            return (
+              <div
+                key={docId}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full",
+                  "bg-primary/10 text-primary text-xs"
+                )}
+              >
+                <BookOpen className="h-3 w-3" />
+                <span className="truncate max-w-[120px]">{doc?.name || docId}</span>
+                <button
+                  onClick={() =>
+                    setSelectedKbDocs((prev) => prev.filter((id) => id !== docId))
+                  }
+                  className="hover:text-destructive transition-colors"
+                  aria-label="Remove KB document"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {attachedFiles.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {attachedFiles.map((file) => (
@@ -129,6 +178,31 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
           ))}
         </div>
       )}
+      {showKbPanel && kbDocs.length > 0 && (
+        <div className="mb-2 border border-border rounded-md p-2 bg-background max-h-32 overflow-y-auto">
+          <p className="text-xs text-muted-foreground mb-1">Select knowledge base documents:</p>
+          {kbDocs.map((doc) => (
+            <label
+              key={doc.id}
+              className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent text-sm cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selectedKbDocs.includes(doc.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedKbDocs((prev) => [...prev, doc.id]);
+                  } else {
+                    setSelectedKbDocs((prev) => prev.filter((id) => id !== doc.id));
+                  }
+                }}
+                className="rounded border-border"
+              />
+              <span className="truncate">{doc.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
       <div className="flex items-end gap-2">
         <button
           type="button"
@@ -138,6 +212,20 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
           aria-label="Attach file"
         >
           <Paperclip className={cn("h-5 w-5", uploading && "animate-pulse")} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowKbPanel(!showKbPanel)}
+          disabled={disabled}
+          className={cn(
+            "flex-shrink-0 p-2 transition-colors disabled:opacity-50",
+            selectedKbDocs.length > 0 || showKbPanel
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          aria-label="Use Knowledge Base"
+        >
+          <BookOpen className="h-5 w-5" />
         </button>
         <input
           ref={fileInputRef}

@@ -64,6 +64,7 @@ export default function ChatConversationPage() {
             chartSpec={msg.chartSpec}
             tableData={msg.tableData}
             executedCode={msg.executedCode}
+            citations={msg.citations}
           />
         ))}
         {error && (
