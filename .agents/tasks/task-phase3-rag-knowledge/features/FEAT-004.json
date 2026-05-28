@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "docs",
   "description": "Phase 3 documentation: README with setup, usage, RAG pipeline explanation, SSE events, testing, and deployment notes",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "1. Create docs/PHASE3-README.md with comprehensive documentation covering: what was implemented (RAG pipeline overview), how the pipeline works (document upload -> load -> chunk -> embed -> store in Qdrant -> retrieval at chat time), how to upload knowledge documents (API + UI), how to use KB in chat (kb_document_ids field + UI toggle), SSE citation event format, how to run tests, deployment notes (Qdrant setup, fastembed model download on first run, environment variables: QDRANT_URL).",
     "2. Include a text-based diagram of the RAG pipeline flow in the documentation.",
@@ -20,5 +20,12 @@
     "test -f docs/PHASE3-README.md && echo 'Doc exists'"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": [
+    "Documentation follows same structure as PHASE1-README.md and PHASE2-README.md",
+    "All API endpoints documented with accurate curl examples matching the actual router implementation",
+    "SSE citation event format documented based on actual conversation router code",
+    "Frontend routes confirmed: /knowledge page exists in (app) layout",
+    "QDRANT_URL setting confirmed at http://localhost:6333 in settings.py",
+    "Documentation-only change, no build/test verification needed"
+  ]
 }
