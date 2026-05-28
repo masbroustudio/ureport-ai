@@ -30,6 +30,10 @@ uReport AI adalah aplikasi chat berbasis AI yang dirancang khusus untuk:
 | PDF Export | Export laporan ke PDF profesional (WeasyPrint) |
 | RAG/Knowledge Base | Enrichment dengan dokumen referensi |
 | Dark Mode | Tema gelap untuk kenyamanan mata |
+| PWA Support | Installable progressive web app |
+| Rate Limiting | Per-user request throttling (60 req/min) |
+| Monitoring | Health checks, metrics, structured logging |
+| Mobile Responsive | Collapsible sidebar, touch-friendly UI |
 
 ## Tech Stack
 
@@ -101,6 +105,7 @@ Dokumentasi lengkap tersedia di [`MASTERPLAN.md`](./MASTERPLAN.md) dan folder `d
 | Document | Content |
 |----------|---------|
 | [MASTERPLAN.md](./MASTERPLAN.md) | Ringkasan produk, arsitektur, dan navigasi dokumentasi |
+| [DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Panduan deployment production (Docker Compose) |
 | [01-vision-and-scope.md](./docs/01-vision-and-scope.md) | Visi, target user, problem, scope |
 | [02-tech-stack.md](./docs/02-tech-stack.md) | Pilihan tech & rasional per-teknologi |
 | [03-architecture.md](./docs/03-architecture.md) | Arsitektur sistem & data flow |
@@ -119,6 +124,7 @@ Dokumentasi lengkap tersedia di [`MASTERPLAN.md`](./MASTERPLAN.md) dan folder `d
 | [16-skills-and-learning-path.md](./docs/16-skills-and-learning-path.md) | Skills & learning path |
 | [17-development-guide.md](./docs/17-development-guide.md) | Development workflow |
 | [decisions/ADR-001-to-006.md](./docs/decisions/ADR-001-to-006.md) | Architecture Decision Records |
+| [PHASE5-README.md](./docs/PHASE5-README.md) | Phase 5: Polish & Beta implementation details |
 
 ## Project Structure
 
@@ -158,13 +164,29 @@ ureport-ai/
 
 ## Development Phases
 
-- **Phase 0 (Current):** Foundation - Project structure, backend skeleton, frontend skeleton, infrastructure configs
-- **Phase 1:** MVP - Chat + File Upload + Basic Analysis
-- **Phase 2:** Charts/Tables + Multi-LLM Support
-- **Phase 3:** RAG + Report Generation + PDF Export
-- **Phase 4:** Polish + Optimization + Deployment
+Semua fase pengembangan telah selesai:
+
+- **Phase 0:** Foundation - Project structure, backend skeleton, frontend skeleton, infrastructure configs (Completed)
+- **Phase 1:** MVP - Chat + File Upload + Basic Analysis (Completed)
+- **Phase 2:** Data Analysis - Charts/Tables + Multi-LLM Support (Completed)
+- **Phase 3:** RAG + Knowledge Base + Report Generation + PDF Export (Completed)
+- **Phase 4:** Report Generator - LLM-powered structured reports with PDF output (Completed)
+- **Phase 5:** Polish & Beta - UX polish, PWA, Docker production, monitoring, rate limiting (Completed)
 
 Detail lengkap ada di [docs/13-roadmap-and-milestones.md](./docs/13-roadmap-and-milestones.md).
+
+## Deployment
+
+Untuk panduan lengkap deploy ke production, lihat [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+
+Quick start production:
+
+```bash
+cp .env.example .env
+# Edit .env with production values
+docker compose -f infra/docker/compose.prod.yml up -d --build
+docker compose -f infra/docker/compose.prod.yml exec api alembic upgrade head
+```
 
 ## Contributing
 
