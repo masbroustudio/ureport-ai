@@ -10,7 +10,7 @@ from app.model.knowledge_document import KnowledgeDocument
 from app.rag.chunker import chunk_text
 from app.rag.embedder import embed_texts
 from app.rag.loaders import load_docx, load_pdf, load_txt
-from app.rag.vector_store import VectorStore
+from app.rag.vector_store import get_vector_store
 
 
 async def ingest_document(
@@ -46,7 +46,7 @@ async def ingest_document(
         embeddings = embed_texts(texts)
 
         # 4. Upsert to Qdrant
-        vector_store = VectorStore()
+        vector_store = get_vector_store()
         vector_store.ensure_collection(user_id)
 
         # Get document name for payload
@@ -94,6 +94,12 @@ async def ingest_document(
 
     except Exception as e:
         await db.rollback()
+        # Clean up orphaned vectors if they were already upserted
+        try:
+            vector_store = get_vector_store()
+            vector_store.delete_document(user_id, document_id)
+        except Exception:
+            pass  # Best-effort cleanup
         # Update document status to failed
         result = await db.execute(
             select(KnowledgeDocument).where(KnowledgeDocument.id == uuid.UUID(document_id))

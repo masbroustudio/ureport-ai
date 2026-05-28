@@ -5,6 +5,15 @@ from qdrant_client import QdrantClient, models
 from app.rag.embedder import EMBEDDING_DIM
 from app.settings import settings
 
+_instance: VectorStore | None = None
+
+
+def get_vector_store() -> VectorStore:
+    global _instance
+    if _instance is None:
+        _instance = VectorStore()
+    return _instance
+
 
 class VectorStore:
     def __init__(self, qdrant_url: str | None = None):

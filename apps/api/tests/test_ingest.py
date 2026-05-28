@@ -28,13 +28,13 @@ def mock_doc_record():
 
 
 class TestIngestDocumentSuccess:
-    @patch("app.rag.ingest.VectorStore")
+    @patch("app.rag.ingest.get_vector_store")
     @patch("app.rag.ingest.embed_texts")
     @patch("app.rag.ingest.chunk_text")
     @patch("app.rag.ingest.load_txt")
     @pytest.mark.asyncio
     async def test_successful_ingestion(
-        self, mock_load_txt, mock_chunk_text, mock_embed_texts, mock_vector_store_cls,
+        self, mock_load_txt, mock_chunk_text, mock_embed_texts, mock_get_vs,
         mock_db_session, mock_doc_record
     ):
         # Setup mocks
@@ -53,7 +53,7 @@ class TestIngestDocumentSuccess:
         mock_embed_texts.return_value = [[0.1] * 384]
 
         mock_vs = MagicMock()
-        mock_vector_store_cls.return_value = mock_vs
+        mock_get_vs.return_value = mock_vs
 
         # Mock db.execute for the select query
         mock_result = MagicMock()
@@ -73,13 +73,13 @@ class TestIngestDocumentSuccess:
         assert mock_doc_record.chunk_count == 1
         mock_db_session.commit.assert_called()
 
-    @patch("app.rag.ingest.VectorStore")
+    @patch("app.rag.ingest.get_vector_store")
     @patch("app.rag.ingest.embed_texts")
     @patch("app.rag.ingest.chunk_text")
     @patch("app.rag.ingest.load_txt")
     @pytest.mark.asyncio
     async def test_vector_store_called(
-        self, mock_load_txt, mock_chunk_text, mock_embed_texts, mock_vector_store_cls,
+        self, mock_load_txt, mock_chunk_text, mock_embed_texts, mock_get_vs,
         mock_db_session, mock_doc_record
     ):
         mock_load_txt.return_value = [
@@ -95,7 +95,7 @@ class TestIngestDocumentSuccess:
         mock_embed_texts.return_value = [[0.1] * 384]
 
         mock_vs = MagicMock()
-        mock_vector_store_cls.return_value = mock_vs
+        mock_get_vs.return_value = mock_vs
 
         mock_result = MagicMock()
         mock_result.scalar_one.return_value = mock_doc_record
@@ -112,13 +112,13 @@ class TestIngestDocumentSuccess:
         mock_vs.ensure_collection.assert_called_once_with("user-123")
         mock_vs.upsert_chunks.assert_called_once()
 
-    @patch("app.rag.ingest.VectorStore")
+    @patch("app.rag.ingest.get_vector_store")
     @patch("app.rag.ingest.embed_texts")
     @patch("app.rag.ingest.chunk_text")
     @patch("app.rag.ingest.load_pdf")
     @pytest.mark.asyncio
     async def test_pdf_loading(
-        self, mock_load_pdf, mock_chunk_text, mock_embed_texts, mock_vector_store_cls,
+        self, mock_load_pdf, mock_chunk_text, mock_embed_texts, mock_get_vs,
         mock_db_session, mock_doc_record
     ):
         mock_load_pdf.return_value = [
@@ -134,7 +134,7 @@ class TestIngestDocumentSuccess:
         mock_embed_texts.return_value = [[0.1] * 384]
 
         mock_vs = MagicMock()
-        mock_vector_store_cls.return_value = mock_vs
+        mock_get_vs.return_value = mock_vs
 
         mock_result = MagicMock()
         mock_result.scalar_one.return_value = mock_doc_record
@@ -152,12 +152,15 @@ class TestIngestDocumentSuccess:
 
 
 class TestIngestDocumentFailure:
+    @patch("app.rag.ingest.get_vector_store")
     @patch("app.rag.ingest.load_txt")
     @pytest.mark.asyncio
     async def test_loader_exception_sets_failed_status(
-        self, mock_load_txt, mock_db_session, mock_doc_record
+        self, mock_load_txt, mock_get_vs, mock_db_session, mock_doc_record
     ):
         mock_load_txt.side_effect = RuntimeError("File read error")
+        mock_vs = MagicMock()
+        mock_get_vs.return_value = mock_vs
 
         # First call for the error handler select query
         mock_result = MagicMock()
@@ -176,12 +179,15 @@ class TestIngestDocumentFailure:
         assert "File read error" in mock_doc_record.error_message
         mock_db_session.rollback.assert_called()
 
+    @patch("app.rag.ingest.get_vector_store")
     @patch("app.rag.ingest.load_txt")
     @pytest.mark.asyncio
     async def test_empty_document_sets_failed_status(
-        self, mock_load_txt, mock_db_session, mock_doc_record
+        self, mock_load_txt, mock_get_vs, mock_db_session, mock_doc_record
     ):
         mock_load_txt.return_value = []
+        mock_vs = MagicMock()
+        mock_get_vs.return_value = mock_vs
 
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_doc_record

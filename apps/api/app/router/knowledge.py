@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
@@ -10,7 +11,7 @@ from app.model.knowledge_document import KnowledgeDocument
 from app.model.user import User
 from app.rag.ingest import ingest_document
 from app.rag.retriever import retrieve
-from app.rag.vector_store import VectorStore
+from app.rag.vector_store import get_vector_store
 from app.schema.knowledge import (
     KBSearchRequest,
     KBSearchResponse,
@@ -19,6 +20,8 @@ from app.schema.knowledge import (
 )
 from app.service.files import save_upload_file
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/kb", tags=["knowledge"])
 
@@ -148,10 +151,10 @@ async def delete_document(
 
     # Delete vectors from Qdrant
     try:
-        vector_store = VectorStore()
+        vector_store = get_vector_store()
         vector_store.delete_document(str(current_user.id), str(document_id))
-    except Exception:
-        pass  # Qdrant may not be available
+    except Exception as e:
+        logger.warning(f"Failed to delete vectors for document {document_id}: {e}")
 
     # Delete chunks from DB
     chunk_result = await db.execute(

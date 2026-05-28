@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.rag.embedder import embed_query
-from app.rag.vector_store import VectorStore
+from app.rag.vector_store import get_vector_store
 
 
 @dataclass
@@ -25,7 +25,7 @@ async def retrieve(
     """Embed query and search Qdrant for relevant chunks."""
     query_vector = embed_query(query)
 
-    vector_store = VectorStore()
+    vector_store = get_vector_store()
     results = vector_store.search(
         user_id=user_id,
         query_vector=query_vector,

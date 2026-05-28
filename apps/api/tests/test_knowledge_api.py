@@ -126,8 +126,8 @@ class TestGetDocument:
 
 @pytest.mark.asyncio
 class TestDeleteDocument:
-    @patch("app.router.knowledge.VectorStore")
-    async def test_delete_document_success(self, mock_vs_cls, client, mock_db):
+    @patch("app.router.knowledge.get_vector_store")
+    async def test_delete_document_success(self, mock_get_vs, client, mock_db):
         doc = MagicMock()
         doc.id = uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
         doc.user_id = uuid.UUID("12345678-1234-5678-1234-567812345678")
@@ -146,7 +146,7 @@ class TestDeleteDocument:
         mock_db.commit = AsyncMock()
 
         mock_vs = MagicMock()
-        mock_vs_cls.return_value = mock_vs
+        mock_get_vs.return_value = mock_vs
 
         response = await client.delete(
             f"/api/v1/kb/documents/{doc.id}"
