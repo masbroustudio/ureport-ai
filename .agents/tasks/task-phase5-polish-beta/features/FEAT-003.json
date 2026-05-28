@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Frontend UX enhancements: Onboarding modal, empty states with Indonesian prompt suggestions, error handling with toast/retry/offline banner, mobile responsive sidebar (Sheet), dark mode polish, and PWA support. Covers task items #1-6.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Install sonner package: add 'sonner' to apps/web/package.json dependencies and run pnpm install.",
     "Step 2: Create apps/web/src/components/onboarding/OnboardingModal.tsx - A 3-step modal component shown on first login (check localStorage 'onboarding_done' flag). Step 1: Welcome + choose default LLM provider (dropdown of AVAILABLE_MODELS). Step 2: Upload your first file (drag-drop area or Skip button). Step 3: Try a sample prompt (pre-fill suggestion or Skip). After completion: set onboarding_done=true in localStorage, redirect to /chat. Use Tailwind for styling, no external modal library needed (use fixed positioning + backdrop).",
@@ -46,5 +46,5 @@
     "cd apps/web && pnpm build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build passes cleanly. Had to move themeColor from metadata to viewport export for Next.js 15 compatibility. Sonner 1.7.4 installed (2.0.7 available but ^1.7.0 range satisfied). All 22 steps implemented successfully."
 }
