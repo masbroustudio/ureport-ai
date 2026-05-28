@@ -61,6 +61,9 @@ export default function ChatConversationPage() {
             role={msg.role}
             content={msg.content}
             isStreaming={msg.isStreaming}
+            chartSpec={msg.chartSpec}
+            tableData={msg.tableData}
+            executedCode={msg.executedCode}
           />
         ))}
         {error && (

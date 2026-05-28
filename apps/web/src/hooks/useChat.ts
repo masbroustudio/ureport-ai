@@ -8,6 +8,9 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  chartSpec?: { data: unknown[]; layout?: Record<string, unknown> };
+  tableData?: { columns: string[]; rows: Record<string, unknown>[] };
+  executedCode?: string;
 }
 
 interface UseChatOptions {
@@ -21,7 +24,7 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(
-    async (content: string, model?: string) => {
+    async (content: string, model?: string, fileIds?: string[]) => {
       setError(null);
 
       const userMessage: ChatMessage = { role: "user", content };
@@ -35,8 +38,9 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
       setIsStreaming(true);
 
       try {
-        const body: Record<string, string> = { content };
+        const body: Record<string, unknown> = { content };
         if (model) body.model = model;
+        if (fileIds && fileIds.length > 0) body.file_ids = fileIds;
 
         const res = await apiFetch(
           `/api/v1/conversations/${conversationId}/messages`,
@@ -86,6 +90,45 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
                   updated[updated.length - 1] = {
                     ...last,
                     content: last.content + (parsed.text || parsed.token || ""),
+                  };
+                }
+                return updated;
+              });
+            } else if (eventType === "chart") {
+              const parsed = JSON.parse(eventData);
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    chartSpec: parsed,
+                  };
+                }
+                return updated;
+              });
+            } else if (eventType === "table") {
+              const parsed = JSON.parse(eventData);
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    tableData: parsed,
+                  };
+                }
+                return updated;
+              });
+            } else if (eventType === "code") {
+              const parsed = JSON.parse(eventData);
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === "assistant") {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    executedCode: parsed.code || parsed.source || parsed,
                   };
                 }
                 return updated;

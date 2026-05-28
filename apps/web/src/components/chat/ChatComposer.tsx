@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const AVAILABLE_MODELS = [
   { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)" },
@@ -10,14 +12,22 @@ const AVAILABLE_MODELS = [
   { id: "openai/sumopod-default", label: "Sumopod Pro" },
 ];
 
+interface AttachedFile {
+  id: string;
+  name: string;
+}
+
 interface ChatComposerProps {
-  onSend: (content: string, model?: string) => void;
+  onSend: (content: string, model?: string, fileIds?: string[]) => void;
   disabled?: boolean;
 }
 
 export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState("");
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [model, setModel] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("default_model") || AVAILABLE_MODELS[0].id;
@@ -37,11 +47,55 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
     adjustHeight();
   }, [content]);
 
+  const handleFileUpload = useCallback(async (file: File) => {
+    setUploading(true);
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${API_BASE}/api/v1/files`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await res.json();
+      setAttachedFiles((prev) => [
+        ...prev,
+        { id: data.id, name: data.name || file.name },
+      ]);
+    } catch {
+      // Upload failed silently - user can try again
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (id: string) => {
+    setAttachedFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
   const handleSubmit = () => {
     const trimmed = content.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed, model);
+    const fileIds = attachedFiles.map((f) => f.id);
+    onSend(trimmed, model, fileIds.length > 0 ? fileIds : undefined);
     setContent("");
+    setAttachedFiles([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -53,7 +107,45 @@ export function ChatComposer({ onSend, disabled }: ChatComposerProps) {
 
   return (
     <div className="border-t border-border p-4">
+      {attachedFiles.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {attachedFiles.map((file) => (
+            <div
+              key={file.id}
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full",
+                "bg-secondary text-secondary-foreground text-xs"
+              )}
+            >
+              <span>{file.name}</span>
+              <button
+                onClick={() => removeFile(file.id)}
+                className="hover:text-destructive transition-colors"
+                aria-label={`Remove ${file.name}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex items-end gap-2">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || uploading}
+          className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          aria-label="Attach file"
+        >
+          <Paperclip className={cn("h-5 w-5", uploading && "animate-pulse")} />
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
         <div className="flex-1">
           <textarea
             ref={textareaRef}
