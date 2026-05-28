@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Backend enhancements: Rate limiting middleware, metrics endpoint, request ID middleware, structured logging, Sentry integration. Covers task items #8 (Monitoring & Health) and #9 (Rate Limiting).",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Create apps/api/app/middleware/__init__.py",
     "Step 2: Create apps/api/app/middleware/rate_limit.py - In-memory rate limiter middleware class. Uses a dict keyed by user_id with timestamps. Two tiers: general API (60 req/min) and report generation (10 req/hour). Returns 429 with Retry-After header when exceeded. Include a cleanup mechanism to remove expired entries. Apply via decorator or path-based config.",
@@ -28,5 +28,5 @@
     "cd apps/api && uv run ruff check ."
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Test client uses ASGITransport which sets client host to 127.0.0.1. Rate limiter falls back to IP-based key since test fixtures use dependency overrides (not real JWT tokens). All 133 tests pass including 6 new ones. Ruff check clean."
 }
