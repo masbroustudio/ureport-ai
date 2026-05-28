@@ -372,3 +372,79 @@ class TestListSections:
             f"/api/v1/reports/{uuid.uuid4()}/sections"
         )
         assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+class TestStartReport:
+    async def test_start_report_no_outline(self, client, mock_db):
+        """Test POST /api/v1/reports/{id}/start returns 400 when no outline."""
+        report = _make_report_mock(status="created")
+        report.outline_json = None
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = report
+        mock_db.execute = AsyncMock(return_value=mock_result)
+
+        response = await client.post(
+            f"/api/v1/reports/{report.id}/start"
+        )
+        assert response.status_code == 400
+        assert "no outline" in response.json()["detail"].lower()
+
+    async def test_start_report_wrong_status(self, client, mock_db):
+        """Test POST /api/v1/reports/{id}/start returns 409 when already writing."""
+        report = _make_report_mock(status="writing")
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = report
+        mock_db.execute = AsyncMock(return_value=mock_result)
+
+        response = await client.post(
+            f"/api/v1/reports/{report.id}/start"
+        )
+        assert response.status_code == 409
+
+
+@pytest.mark.asyncio
+class TestDownloadPdf:
+    async def test_download_pdf_no_file(self, client, mock_db):
+        """Test GET /api/v1/reports/{id}/pdf returns 404 when pdf_path is None."""
+        report = _make_report_mock(status="done")
+        report.pdf_path = None
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = report
+        mock_db.execute = AsyncMock(return_value=mock_result)
+
+        response = await client.get(
+            f"/api/v1/reports/{report.id}/pdf"
+        )
+        assert response.status_code == 404
+        assert "not generated" in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+class TestRegenerateSection:
+    @patch("app.router.reports.write_section", new_callable=AsyncMock)
+    async def test_regenerate_section_not_found(self, mock_write, client, mock_db):
+        """Test POST /regenerate returns 404 when section doesn't exist."""
+        report = _make_report_mock(status="done")
+
+        # First execute: report ownership
+        report_result = MagicMock()
+        report_result.scalar_one_or_none.return_value = report
+
+        # Second execute: section lookup returns None
+        section_result = MagicMock()
+        section_result.scalar_one_or_none.return_value = None
+
+        mock_db.execute = AsyncMock(
+            side_effect=[report_result, section_result]
+        )
+
+        bad_section_id = uuid.uuid4()
+        response = await client.post(
+            f"/api/v1/reports/{report.id}/sections/{bad_section_id}/regenerate"
+        )
+        assert response.status_code == 404
+        assert "section not found" in response.json()["detail"].lower()

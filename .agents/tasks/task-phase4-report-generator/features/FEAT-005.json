@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Address 4 issues from v2 semantic review: error message leaks, PDF download auth, stored XSS via HTML fallback, and test coverage for critical paths.",
+  "status": "in_progress",
+  "steps": [
+    "Fix error message leak in regenerate_section and SSE error handler in reports.py",
+    "Fix PDF download link to use fetch with auth header in frontend page.tsx",
+    "Add HTML sanitization in renderer.py to prevent stored XSS",
+    "Add test coverage for critical paths in test_reports.py, test_report_planner.py, test_report_renderer.py"
+  ],
+  "acceptance_criteria": [
+    "regenerate_section returns generic error message, logs full exception",
+    "SSE error handler returns generic error message, logs full exception",
+    "Frontend PDF download uses fetch with Authorization header",
+    "renderer.py sanitizes HTML output to remove script/iframe/object/embed tags and on* attributes",
+    "New tests cover: start with no outline (400), start wrong status (409), download with no file (404), regenerate bad section (404), invalid template_id, sanitize script tags, sanitize event handlers",
+    "All tests pass, ruff lint passes, pnpm build succeeds"
+  ],
+  "verification": [
+    "cd apps/api && uv run ruff check .",
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/web && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

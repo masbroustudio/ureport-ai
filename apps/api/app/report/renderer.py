@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +16,19 @@ logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 STORAGE_DIR = Path("./storage/reports")
+
+
+def _sanitize_html(html: str) -> str:
+    """Remove potentially dangerous HTML tags and attributes."""
+    # Remove script, iframe, object, embed tags and their content
+    html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    html = re.sub(r'<iframe[^>]*>.*?</iframe>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    html = re.sub(r'<object[^>]*>.*?</object>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    html = re.sub(r'<embed[^>]*/?>', '', html, flags=re.IGNORECASE)
+    # Remove on* event handler attributes
+    html = re.sub(r'\s+on\w+\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
+    html = re.sub(r"\s+on\w+\s*=\s*'[^']*'", '', html, flags=re.IGNORECASE)
+    return html
 
 
 async def render_pdf(report_id: str, db: AsyncSession) -> str:
@@ -79,6 +93,7 @@ async def render_pdf(report_id: str, db: AsyncSession) -> str:
                 section.content_markdown,
                 extensions=["tables", "fenced_code"],
             )
+            content_html = _sanitize_html(content_html)
 
         current_chapter["sections"].append(
             {

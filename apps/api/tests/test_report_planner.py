@@ -182,3 +182,20 @@ class TestPlanReportOutline:
         user_msg = messages[1]["content"]
         assert "sales.xlsx" in user_msg
         assert "Company Policy" in user_msg
+
+    async def test_invalid_template_id_raises_error(self):
+        """Test that a template_id with path traversal chars raises ValueError."""
+        from app.report.planner import validate_template_id
+
+        with pytest.raises(ValueError, match="Invalid template_id"):
+            validate_template_id("../../etc")
+
+        with pytest.raises(ValueError, match="Invalid template_id"):
+            validate_template_id("../passwd")
+
+        with pytest.raises(ValueError, match="Invalid template_id"):
+            validate_template_id("template/../../secret")
+
+        # Valid template_ids should not raise
+        validate_template_id("business_report_v1")
+        validate_template_id("my-template-2")

@@ -315,12 +315,12 @@ async def start_report_generation(
                 yield f"event: done\ndata: {done_data}\n\n"
 
             except Exception as e:
-                logger.error(f"Rendering failed: {e}")
+                logger.error(f"Rendering failed for report {report_id}: {e}", exc_info=True)
                 report.status = "failed"
-                report.error_message = f"Rendering failed: {e}"
+                report.error_message = "Rendering failed. Please try again."
                 await db.commit()
 
-                error_data = json.dumps({"error": str(e)})
+                error_data = json.dumps({"error": "Rendering failed. Please try again."})
                 yield f"event: error\ndata: {error_data}\n\n"
 
         finally:
@@ -434,11 +434,12 @@ async def regenerate_section(
         await db.commit()
         await db.refresh(db_section)
     except Exception as e:
+        logger.error(f"Failed to regenerate section {section_id}: {e}", exc_info=True)
         db_section.status = "failed"
         await db.commit()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to regenerate section: {e}",
+            detail="Failed to regenerate section. Please try again.",
         )
 
     return SectionResponse.model_validate(db_section)

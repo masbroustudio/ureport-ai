@@ -198,3 +198,62 @@ class TestRenderPdf:
         assert "Methods" in html_content
         assert "Overview content" in html_content
         assert "Methods approach content" in html_content
+
+
+class TestSanitizeHtml:
+    def test_sanitize_html_removes_script_tags(self):
+        """Test that _sanitize_html removes script tags and their content."""
+        from app.report.renderer import _sanitize_html
+
+        html = '<p>Hello</p><script>alert("xss")</script><p>World</p>'
+        result = _sanitize_html(html)
+        assert "<script" not in result
+        assert "alert" not in result
+        assert "<p>Hello</p>" in result
+        assert "<p>World</p>" in result
+
+    def test_sanitize_html_removes_iframe_tags(self):
+        """Test that _sanitize_html removes iframe tags."""
+        from app.report.renderer import _sanitize_html
+
+        html = '<p>Content</p><iframe src="http://evil.com"></iframe><p>More</p>'
+        result = _sanitize_html(html)
+        assert "<iframe" not in result
+        assert "evil.com" not in result
+        assert "<p>Content</p>" in result
+
+    def test_sanitize_html_removes_object_and_embed_tags(self):
+        """Test that _sanitize_html removes object and embed tags."""
+        from app.report.renderer import _sanitize_html
+
+        html = '<object data="evil.swf">fallback</object><embed src="evil.swf"/>'
+        result = _sanitize_html(html)
+        assert "<object" not in result
+        assert "<embed" not in result
+
+    def test_sanitize_html_removes_event_handlers(self):
+        """Test that _sanitize_html removes on* event handler attributes."""
+        from app.report.renderer import _sanitize_html
+
+        html = '<p onclick="alert(1)">Click me</p><img onerror="hack()" src="x">'
+        result = _sanitize_html(html)
+        assert "onclick" not in result
+        assert "onerror" not in result
+        assert "<p" in result
+
+    def test_sanitize_html_removes_single_quote_event_handlers(self):
+        """Test that _sanitize_html handles single-quoted on* attributes."""
+        from app.report.renderer import _sanitize_html
+
+        html = "<div onmouseover='steal()'>hover</div>"
+        result = _sanitize_html(html)
+        assert "onmouseover" not in result
+        assert "hover" in result
+
+    def test_sanitize_html_preserves_safe_content(self):
+        """Test that _sanitize_html preserves safe HTML."""
+        from app.report.renderer import _sanitize_html
+
+        html = '<h1>Title</h1><p>Paragraph with <strong>bold</strong> and <em>italic</em>.</p><table><tr><td>Cell</td></tr></table>'
+        result = _sanitize_html(html)
+        assert result == html

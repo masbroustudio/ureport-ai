@@ -383,12 +383,34 @@ export default function ReportDetailPage() {
           )}
 
           {isDone && (
-            <a
-              href={`${API_BASE}/api/v1/reports/${reportId}/pdf`}
+            <button
+              onClick={async () => {
+                try {
+                  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+                  const res = await fetch(`${API_BASE}/api/v1/reports/${reportId}/pdf`, {
+                    headers: {
+                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                  });
+                  if (!res.ok) {
+                    setError("Failed to download file");
+                    return;
+                  }
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${report.title}.pdf`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch {
+                  setError("Failed to download file");
+                }
+              }}
               className="block w-full px-3 py-2 bg-green-600 text-white rounded text-xs font-medium text-center hover:opacity-90"
             >
               Download PDF
-            </a>
+            </button>
           )}
 
           {selectedSection && !isEditable && (
