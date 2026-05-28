@@ -36,13 +36,13 @@ async def upload_file(
             detail=f"Unsupported file type: {mime}. Allowed: CSV, XLSX, XLS.",
         )
 
-    # Save file to storage
-    storage_path, size_bytes = await save_upload_file(file, current_user.id, settings)
-
-    # Check size limit
+    # Save file to storage with streaming size check
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if size_bytes > max_bytes:
-        delete_file_storage(storage_path, settings)
+    try:
+        storage_path, size_bytes = await save_upload_file(
+            file, current_user.id, settings, max_size_bytes=max_bytes
+        )
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"File too large. Maximum size is {settings.MAX_UPLOAD_SIZE_MB} MB.",
@@ -50,10 +50,12 @@ async def upload_file(
 
     # Run auto-profile
     full_path = get_full_path(storage_path, settings)
+    profile = None
+    file_status = "ready"
     try:
         profile = auto_profile(full_path, mime)
     except Exception:
-        profile = None
+        file_status = "profile_failed"
 
     # Create DB record
     conv_id = uuid.UUID(conversation_id) if conversation_id else None
@@ -66,7 +68,7 @@ async def upload_file(
         storage_path=storage_path,
         kind="data",
         profile_json=profile,
-        status="ready",
+        status=file_status,
     )
     db.add(file_record)
     await db.commit()

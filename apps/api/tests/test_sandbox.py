@@ -10,6 +10,54 @@ def test_check_code_safety_allows_safe_code():
     assert check_code_safety(code) is None
 
 
+def test_check_code_safety_blocks_exec():
+    """exec() calls should be blocked."""
+    code = "exec('import os')"
+    result = check_code_safety(code)
+    assert result is not None
+    assert "Blocked call: exec" in result
+
+
+def test_check_code_safety_blocks_eval():
+    """eval() calls should be blocked."""
+    code = "x = eval('1+1')"
+    result = check_code_safety(code)
+    assert result is not None
+    assert "Blocked call: eval" in result
+
+
+def test_check_code_safety_blocks_compile():
+    """compile() calls should be blocked."""
+    code = "c = compile('import os', '<string>', 'exec')"
+    result = check_code_safety(code)
+    assert result is not None
+    assert "Blocked call: compile" in result
+
+
+def test_check_code_safety_blocks_open():
+    """open() calls should be blocked."""
+    code = "f = open('/etc/passwd')"
+    result = check_code_safety(code)
+    assert result is not None
+    assert "Blocked call: open" in result
+
+
+def test_check_code_safety_blocks_getattr():
+    """getattr() calls should be blocked."""
+    code = "getattr(__builtins__, '__import__')('os')"
+    result = check_code_safety(code)
+    assert result is not None
+    assert "Blocked call: getattr" in result
+
+
+def test_check_code_safety_blocks_breakpoint():
+    """breakpoint() calls should be blocked."""
+    code = "breakpoint()"
+    result = check_code_safety(code)
+    assert result is not None
+    assert "Blocked call: breakpoint" in result
+
+
 def test_check_code_safety_blocks_os_import():
     """Import os should be blocked."""
     code = "import os\nos.system('ls')"

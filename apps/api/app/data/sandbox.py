@@ -10,6 +10,10 @@ BLOCKED_MODULES = {
     "importlib", "ctypes", "signal", "multiprocessing", "threading",
 }
 
+BLOCKED_CALLS = {
+    "exec", "eval", "compile", "getattr", "open", "breakpoint",
+}
+
 
 @dataclass
 class ExecutionResult:
@@ -39,9 +43,15 @@ def check_code_safety(code: str) -> str | None:
                 if module_root in BLOCKED_MODULES:
                     return f"Blocked import: {node.module}"
         elif isinstance(node, ast.Call):
-            # Block __import__ calls
-            if isinstance(node.func, ast.Name) and node.func.id == "__import__":
-                return "Blocked: __import__ call"
+            # Block __import__ calls and other dangerous built-in calls
+            if isinstance(node.func, ast.Name):
+                if node.func.id == "__import__":
+                    return "Blocked: __import__ call"
+                if node.func.id in BLOCKED_CALLS:
+                    return f"Blocked call: {node.func.id}"
+            elif isinstance(node.func, ast.Attribute):
+                if node.func.attr in BLOCKED_CALLS:
+                    return f"Blocked call: {node.func.attr}"
 
     return None
 

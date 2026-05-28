@@ -7,11 +7,13 @@ from app.settings import Settings
 
 
 async def save_upload_file(
-    file: UploadFile, user_id: uuid.UUID, settings: Settings
+    file: UploadFile, user_id: uuid.UUID, settings: Settings,
+    max_size_bytes: int | None = None,
 ) -> tuple[str, int]:
     """Save uploaded file to local storage.
 
     Returns (relative_storage_path, size_bytes).
+    Raises ValueError if file exceeds max_size_bytes during write.
     """
     user_dir = os.path.join(settings.FILE_STORAGE_PATH, str(user_id))
     os.makedirs(user_dir, exist_ok=True)
@@ -23,10 +25,24 @@ async def save_upload_file(
     full_path = os.path.join(settings.FILE_STORAGE_PATH, storage_path)
 
     size = 0
-    with open(full_path, "wb") as f:
-        while chunk := await file.read(1024 * 1024):
-            size += len(chunk)
-            f.write(chunk)
+    try:
+        with open(full_path, "wb") as f:
+            while chunk := await file.read(8192):
+                size += len(chunk)
+                if max_size_bytes and size > max_size_bytes:
+                    f.close()
+                    os.remove(full_path)
+                    raise ValueError(
+                        f"File exceeds maximum allowed size of {max_size_bytes} bytes"
+                    )
+                f.write(chunk)
+    except ValueError:
+        raise
+    except Exception:
+        # Clean up partially written file on unexpected error
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        raise
 
     return storage_path, size
 

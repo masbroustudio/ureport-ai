@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from datetime import datetime
@@ -278,13 +279,8 @@ async def create_message(
             await db.commit()
             await db.refresh(assistant_message)
 
-            done_data = json.dumps({
-                "message_id": str(assistant_message.id),
-                "usage": usage_info,
-            })
-            yield f"event: done\ndata: {done_data}\n\n"
-
             # If files are attached, check for code in response and execute
+            # This must happen BEFORE the done event so clients receive results
             if file_records and accumulated_text:
                 code = extract_code_from_response(accumulated_text)
                 if code:
@@ -296,7 +292,9 @@ async def create_message(
                     executor = SandboxExecutor(
                         timeout=settings.DATA_SANDBOX_TIMEOUT_SECONDS
                     )
-                    exec_result = executor.execute(code, full_path, target_file.mime)
+                    exec_result = await asyncio.to_thread(
+                        executor.execute, code, full_path, target_file.mime
+                    )
 
                     if exec_result.chart_spec:
                         yield f"event: chart\ndata: {json.dumps(exec_result.chart_spec, default=str)}\n\n"
@@ -308,6 +306,12 @@ async def create_message(
                         yield f"event: table\ndata: {json.dumps(table_payload, default=str)}\n\n"
                     if exec_result.error:
                         yield f"event: error\ndata: {json.dumps({'detail': exec_result.error})}\n\n"
+
+            done_data = json.dumps({
+                "message_id": str(assistant_message.id),
+                "usage": usage_info,
+            })
+            yield f"event: done\ndata: {done_data}\n\n"
 
         except Exception as e:
             # Persist partial assistant message if any text was accumulated
