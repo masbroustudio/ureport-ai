@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Backend tests: comprehensive test suite for all RAG modules with mocked external services (Qdrant, fastembed)",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "1. Create test fixture files in apps/api/tests/fixtures/: a tiny PDF (use pymupdf to create programmatically in conftest), a small DOCX, and a plain TXT file.",
     "2. Create apps/api/tests/test_loaders.py: test load_pdf, load_docx, load_txt with fixture files. Verify correct text extraction, page numbers, structure.",

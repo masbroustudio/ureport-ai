@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Frontend: Knowledge Base page, citation rendering in chat, and KB document selector in chat composer",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "1. Create apps/web/src/app/(app)/knowledge/page.tsx: Knowledge Base page with document list (card grid showing name, status badge, chunk_count, tags, upload date), upload button for PDF/DOCX/TXT (drag-drop or click), delete button per document, and a search box for testing RAG search.",
     "2. Create apps/web/src/components/knowledge/KBDocumentCard.tsx: card component showing document info with status badge (processing=yellow, ready=green, failed=red), chunk count, and delete button.",

@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-004",
+  "type": "docs",
+  "description": "Phase 3 documentation: README with setup, usage, RAG pipeline explanation, SSE events, testing, and deployment notes",
+  "status": "pending",
+  "steps": [
+    "1. Create docs/PHASE3-README.md with comprehensive documentation covering: what was implemented (RAG pipeline overview), how the pipeline works (document upload -> load -> chunk -> embed -> store in Qdrant -> retrieval at chat time), how to upload knowledge documents (API + UI), how to use KB in chat (kb_document_ids field + UI toggle), SSE citation event format, how to run tests, deployment notes (Qdrant setup, fastembed model download on first run, environment variables: QDRANT_URL).",
+    "2. Include a text-based diagram of the RAG pipeline flow in the documentation.",
+    "3. Document all new API endpoints with request/response examples.",
+    "4. Document environment variables and configuration needed for Phase 3.",
+    "5. Add troubleshooting section for common issues (Qdrant connection, model download, large PDF handling)."
+  ],
+  "acceptance_criteria": [
+    "docs/PHASE3-README.md exists and is comprehensive",
+    "Pipeline diagram is included",
+    "All new API endpoints are documented with examples",
+    "Setup and deployment instructions are clear"
+  ],
+  "verification": [
+    "test -f docs/PHASE3-README.md && echo 'Doc exists'"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

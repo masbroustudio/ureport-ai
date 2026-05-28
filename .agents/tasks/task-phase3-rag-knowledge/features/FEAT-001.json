@@ -1,0 +1,50 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Backend RAG pipeline: dependencies, models, migration, document loaders, chunker, embedder, vector store, ingestion pipeline, retriever, and knowledge API endpoints",
+  "status": "completed",
+  "steps": [
+    "1. Add dependencies to apps/api/pyproject.toml: pymupdf, python-docx, fastembed, tiktoken. Run `uv sync` to install.",
+    "2. Create apps/api/app/model/knowledge_document.py with KnowledgeDocument model: id (UUID pk), user_id (FK users.id), name (str), source_file_id (FK files.id nullable), title (str nullable), tags (ARRAY of String), language (str nullable), status (str: processing|ready|failed), chunk_count (int default 0), error_message (str nullable), created_at (DateTime with timezone).",
+    "3. Create apps/api/app/model/kb_chunk.py with KBChunk model: id (UUID pk), document_id (FK knowledge_documents.id), chunk_index (int), text (Text), page (int nullable), section (str nullable), token_count (int), qdrant_point_id (str nullable), created_at (DateTime with timezone).",
+    "4. Register both models in apps/api/app/model/__init__.py following the existing pattern (import after Base, add to __all__).",
+    "5. Create alembic migration apps/api/alembic/versions/003_add_knowledge_tables.py (revision='003', down_revision='002') creating knowledge_documents and kb_chunks tables with proper columns, FKs, and indexes.",
+    "6. Create apps/api/app/rag/ package with __init__.py.",
+    "7. Create apps/api/app/rag/loaders.py with functions: load_pdf(path)->list[dict], load_docx(path)->list[dict], load_txt(path)->list[dict]. Each returns list of {'text': str, 'page': int|None, 'section': str|None}. Use pymupdf for PDF, python-docx for DOCX.",
+    "8. Create apps/api/app/rag/chunker.py with recursive text splitter: target 512 tokens, overlap ~77 tokens (15%), split on paragraph > sentence > fixed size. Use tiktoken cl100k_base for counting. Return list of Chunk dataclass/namedtuple(text, page, section, chunk_index, token_count).",
+    "9. Create apps/api/app/rag/embedder.py using fastembed with model BAAI/bge-small-en-v1.5 (384 dimensions). Functions: embed_texts(texts: list[str]) -> list[list[float]], embed_query(query: str) -> list[float]. Use singleton pattern for model loading.",
+    "10. Create apps/api/app/rag/vector_store.py wrapping qdrant_client. Functions: ensure_collection(user_id) creates collection 'kb_{user_id}' if not exists (cosine distance, 384 dims), upsert_chunks(user_id, chunks_with_vectors, metadata), search(user_id, query_vector, top_k=8, filters=None)->list[SearchResult], delete_document(user_id, document_id). Use QdrantClient(url=settings.QDRANT_URL).",
+    "11. Create apps/api/app/rag/ingest.py with ingest_document(db_session, user_id, document_id, file_path, file_type) that: loads doc, chunks text, embeds chunks, upserts to Qdrant, saves KBChunk records to DB, updates KnowledgeDocument status. Handle errors by setting status='failed'.",
+    "12. Create apps/api/app/rag/retriever.py with retrieve(db_session, user_id, query, top_k=8, document_ids=None)->list[RetrievalResult] that: embeds query, searches Qdrant (with document_id filter if provided), returns results with text, score, doc_name, page, section.",
+    "13. Create apps/api/app/schema/knowledge.py with Pydantic schemas: KnowledgeDocumentResponse, KnowledgeDocumentCreate (optional title, tags), KBSearchRequest (query, top_k, document_ids), KBSearchResult, KBSearchResponse.",
+    "14. Create apps/api/app/router/knowledge.py with APIRouter(prefix='/kb', tags=['knowledge']): POST /documents (upload+ingest, multipart), GET /documents (list), GET /documents/{id} (detail), DELETE /documents/{id} (delete doc+chunks+vectors), POST /search (RAG search). Accept PDF/DOCX/TXT MIME types.",
+    "15. Register the knowledge router in apps/api/app/main.py and apps/api/app/router/__init__.py.",
+    "16. Modify apps/api/app/schema/conversation.py MessageCreate to add optional field: kb_document_ids: list[str] | None = None.",
+    "17. Modify apps/api/app/router/conversations.py create_message endpoint: when kb_document_ids is provided, call retrieve() to get relevant chunks, inject them into the system prompt as RAG context with citation markers [^N], and after LLM response emit SSE 'citation' events with source info.",
+    "18. Run `cd apps/api && uv run ruff check . --fix` to ensure code passes linting."
+  ],
+  "acceptance_criteria": [
+    "uv sync installs all new dependencies without errors",
+    "All new model files are importable and consistent with existing patterns",
+    "Alembic migration file 003 exists with correct schema",
+    "All RAG modules (loaders, chunker, embedder, vector_store, ingest, retriever) are importable",
+    "Knowledge router registered and endpoints accessible",
+    "MessageCreate schema accepts kb_document_ids field",
+    "Conversations endpoint handles RAG context injection",
+    "ruff check passes on all new code"
+  ],
+  "verification": [
+    "cd apps/api && uv sync",
+    "cd apps/api && uv run python -c 'from app.model import Base; from app.model.knowledge_document import KnowledgeDocument; from app.model.kb_chunk import KBChunk; print(\"Models OK\")'",
+    "cd apps/api && uv run python -c 'from app.rag.loaders import load_pdf, load_docx, load_txt; print(\"Loaders OK\")'",
+    "cd apps/api && uv run python -c 'from app.rag.chunker import chunk_text; print(\"Chunker OK\")'",
+    "cd apps/api && uv run python -c 'from app.rag.embedder import embed_texts, embed_query; print(\"Embedder OK\")'",
+    "cd apps/api && uv run python -c 'from app.rag.vector_store import VectorStore; print(\"VectorStore OK\")'",
+    "cd apps/api && uv run python -c 'from app.rag.ingest import ingest_document; print(\"Ingest OK\")'",
+    "cd apps/api && uv run python -c 'from app.rag.retriever import retrieve; print(\"Retriever OK\")'",
+    "cd apps/api && uv run python -c 'from app.router.knowledge import router; print(\"Router OK\")'",
+    "cd apps/api && uv run ruff check ."
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
