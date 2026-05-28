@@ -14,6 +14,17 @@ BLOCKED_CALLS = {
     "exec", "eval", "compile", "getattr", "open", "breakpoint",
 }
 
+# Dangerous methods that should not be called as attributes on any object.
+# Covers pandas deserialization (RCE via pickle) and database access.
+BLOCKED_ATTRIBUTES = {
+    "read_pickle", "to_pickle", "read_sql", "read_sql_query",
+    "read_sql_table", "to_sql",
+}
+
+# Dunder attributes used for MRO/class-hierarchy walking exploits.
+# __init__ is allowed since it is commonly needed for normal code.
+_ALLOWED_DUNDERS = {"__init__"}
+
 
 @dataclass
 class ExecutionResult:
@@ -25,7 +36,13 @@ class ExecutionResult:
 
 
 def check_code_safety(code: str) -> str | None:
-    """Returns error message if code is unsafe, None if safe."""
+    """Returns error message if code is unsafe, None if safe.
+
+    NOTE: AST-based sandboxing cannot guarantee full isolation. Determined
+    attackers can still find bypasses (e.g. via closures, frame objects, or
+    C-level tricks). For production deployments, combine this with OS-level
+    isolation (nsjail, gVisor, or seccomp) to limit the blast radius.
+    """
     try:
         tree = ast.parse(code)
     except SyntaxError as e:
@@ -42,6 +59,22 @@ def check_code_safety(code: str) -> str | None:
                 module_root = node.module.split(".")[0]
                 if module_root in BLOCKED_MODULES:
                     return f"Blocked import: {node.module}"
+        elif isinstance(node, ast.Attribute):
+            # Block dangerous pandas/Python I/O methods (e.g. read_pickle)
+            if node.attr in BLOCKED_ATTRIBUTES:
+                return f"Blocked attribute: {node.attr}"
+            # Block dunder attribute access used for MRO/class-hierarchy walking
+            # (e.g. __class__, __bases__, __subclasses__, __mro__)
+            if (
+                node.attr.startswith("__")
+                and node.attr.endswith("__")
+                and node.attr not in _ALLOWED_DUNDERS
+            ):
+                return f"Blocked attribute: {node.attr}"
+        elif isinstance(node, ast.Subscript):
+            # Block subscript access on __builtins__ (e.g. __builtins__['__import__'])
+            if isinstance(node.value, ast.Name) and node.value.id == "__builtins__":
+                return "Blocked: subscript access on __builtins__"
         elif isinstance(node, ast.Call):
             # Block __import__ calls and other dangerous built-in calls
             if isinstance(node.func, ast.Name):

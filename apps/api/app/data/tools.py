@@ -80,13 +80,21 @@ async def make_chart(
     if file.profile_json and "columns" in file.profile_json:
         valid_columns = {col["name"] for col in file.profile_json["columns"]}
 
-    if valid_columns:
-        if x not in valid_columns:
-            return ExecutionResult(error=f"Column '{x}' not found in file", code="")
-        if y and y not in valid_columns:
-            return ExecutionResult(error=f"Column '{y}' not found in file", code="")
-        if color and color not in valid_columns:
-            return ExecutionResult(error=f"Column '{color}' not found in file", code="")
+    if not valid_columns:
+        return ExecutionResult(
+            error="File profile is required for chart generation. Please re-upload the file.",
+            code="",
+            stdout="",
+            table_data=None,
+            chart_spec=None,
+        )
+
+    if x not in valid_columns:
+        return ExecutionResult(error=f"Column '{x}' not found in file", code="")
+    if y and y not in valid_columns:
+        return ExecutionResult(error=f"Column '{y}' not found in file", code="")
+    if color and color not in valid_columns:
+        return ExecutionResult(error=f"Column '{color}' not found in file", code="")
 
     # Escape single quotes in string values
     safe_x = x.replace("'", "\\'")

@@ -20,6 +20,15 @@ async def save_upload_file(
 
     file_id = uuid.uuid4()
     safe_name = file.filename or "upload"
+    # Sanitize filename: strip path separators, traversal sequences, and null bytes
+    safe_name = (
+        safe_name.replace("/", "")
+        .replace("\\", "")
+        .replace("..", "")
+        .replace("\0", "")
+    )
+    if not safe_name:
+        safe_name = "upload"
     storage_name = f"{file_id}_{safe_name}"
     storage_path = os.path.join(str(user_id), storage_name)
     full_path = os.path.join(settings.FILE_STORAGE_PATH, storage_path)
