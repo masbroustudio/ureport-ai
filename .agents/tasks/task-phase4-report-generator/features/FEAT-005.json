@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "fix",
   "description": "Address 4 issues from v2 semantic review: error message leaks, PDF download auth, stored XSS via HTML fallback, and test coverage for critical paths.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Fix error message leak in regenerate_section and SSE error handler in reports.py",
     "Fix PDF download link to use fetch with auth header in frontend page.tsx",
@@ -23,5 +23,5 @@
     "cd apps/web && pnpm build"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 4 v2 review issues addressed. 127 total tests pass (11 new). Ruff lint passes. Frontend builds successfully. The _sanitize_html function is regex-based to avoid adding a new dependency. PDF download now uses fetch with Bearer token from localStorage."
 }
