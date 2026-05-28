@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "chore",
   "description": "Install new dependencies and verify existing test suite passes as baseline. Add weasyprint, jinja2, and markdown to pyproject.toml. Run uv sync, then run existing tests to confirm nothing is broken.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Add 'weasyprint', 'jinja2', and 'markdown' to the dependencies list in apps/api/pyproject.toml",
     "Run 'uv sync' in apps/api/ to install the new dependencies",
@@ -21,5 +21,5 @@
     "cd apps/api && uv run ruff check ."
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All three dependencies (weasyprint 68.1, jinja2, markdown 3.10.2) installed successfully via uv sync. All 88 existing tests pass. Ruff lint passes. Jinja2 was already available as a transitive dependency of FastAPI but is now explicitly listed. WeasyPrint installed without needing separate system library installation (pango/cairo already present)."
 }
