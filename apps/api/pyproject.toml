@@ -21,6 +21,9 @@ dependencies = [
     "argon2-cffi",
     "asyncpg",
     "email-validator",
+    "pandas",
+    "openpyxl",
+    "plotly",
 ]
 
 [dependency-groups]
