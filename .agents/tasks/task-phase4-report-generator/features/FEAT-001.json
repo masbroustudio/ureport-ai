@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Install new dependencies and verify existing test suite passes as baseline. Add weasyprint, jinja2, and markdown to pyproject.toml. Run uv sync, then run existing tests to confirm nothing is broken.",
+  "status": "in_progress",
+  "steps": [
+    "Add 'weasyprint', 'jinja2', and 'markdown' to the dependencies list in apps/api/pyproject.toml",
+    "Run 'uv sync' in apps/api/ to install the new dependencies",
+    "Run 'uv run pytest tests/ -v' in apps/api/ to confirm existing 88 tests still pass",
+    "Run 'uv run ruff check .' in apps/api/ to confirm lint passes"
+  ],
+  "acceptance_criteria": [
+    "pyproject.toml contains weasyprint, jinja2, and markdown in dependencies",
+    "uv sync completes without errors",
+    "All existing tests pass (88 tests)",
+    "Ruff lint passes"
+  ],
+  "verification": [
+    "cd apps/api && uv sync",
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/api && uv run ruff check ."
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

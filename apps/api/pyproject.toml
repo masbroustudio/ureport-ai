@@ -28,6 +28,9 @@ dependencies = [
     "python-docx",
     "fastembed",
     "tiktoken",
+    "weasyprint",
+    "jinja2",
+    "markdown",
 ]
 
 [dependency-groups]

@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement backend tests for the report generation pipeline (planner, writer, renderer, endpoints). All tests mock external services (LLM, DB, WeasyPrint). Also implement the frontend Reports pages (list, new, detail, outline editor) and update the sidebar navigation.",
+  "status": "pending",
+  "steps": [
+    "Step 1 - Test Report Planner: Create apps/api/tests/test_report_planner.py. Mock litellm.acompletion to return a valid outline JSON. Test that plan_report_outline returns proper structure with chapters and sections. Test validation error handling when LLM returns invalid JSON.",
+    "Step 2 - Test Report Writer: Create apps/api/tests/test_report_writer.py. Mock litellm.acompletion to return markdown content. Mock the RAG retriever (app.rag.retriever.retrieve). Test write_section returns markdown string. Test that use_rag triggers retriever call.",
+    "Step 3 - Test Report Renderer: Create apps/api/tests/test_report_renderer.py. Mock the DB session to return ReportSection objects. Mock weasyprint (or test only the HTML generation path). Test that render_pdf produces an HTML file (fallback path) with expected content - title, sections rendered as HTML.",
+    "Step 4 - Test Report Endpoints: Create apps/api/tests/test_reports.py. Using the existing conftest.py client/mock_db pattern, test: POST /api/v1/reports (mock planner), GET /api/v1/reports (list), GET /api/v1/reports/{id} (detail), PUT /api/v1/reports/{id}/outline (update), DELETE /api/v1/reports/{id}, GET /api/v1/reports/{id}/sections. Mock DB execute returns appropriately.",
+    "Step 5 - Run all tests: Execute pytest and fix any failures until all tests pass (existing 88 + new report tests).",
+    "Step 6 - Frontend Reports List Page: Create apps/web/src/app/(app)/reports/page.tsx. Show list of user's reports fetched from GET /api/v1/reports. Display report cards with: title, template name, status badge (colored: created=blue, writing=yellow, done=green, failed=red), progress bar (if writing), date, download PDF button (if done). Include 'New Report' button linking to /reports/new.",
+    "Step 7 - Frontend New Report Page: Create apps/web/src/app/(app)/reports/new/page.tsx. Form with: title input, template selector dropdown (just business_report_v1 for now), custom instructions textarea, submit button 'Plan Report'. On submit: POST /api/v1/reports, then redirect to /reports/{id} to show outline.",
+    "Step 8 - Frontend Report Detail Page: Create apps/web/src/app/(app)/reports/[id]/page.tsx. Three-column layout: Left panel - outline tree showing chapters/sections with status indicators. Center panel - selected section content rendered as markdown (use react-markdown). Right panel - actions: 'Start Writing' button (calls POST /reports/{id}/start with SSE), 'Regenerate Section' button, 'Download PDF' button (if done). SSE progress: show progress bar updating in real-time as sections complete. After done, show download link.",
+    "Step 9 - Frontend Outline Editor: In the report detail page, when status is 'created' (outline ready but not yet written), allow editing the outline. Show editable section titles and instructions as text inputs. 'Save Outline' button calls PUT /reports/{id}/outline.",
+    "Step 10 - Sidebar Navigation: Update apps/web/src/components/chat/ChatSidebar.tsx to add a 'Reports' link in the bottom nav section (between Knowledge Base and Settings), linking to /reports.",
+    "Step 11 - Run frontend build: Execute 'pnpm build' in apps/web/ and fix any TypeScript or build errors."
+  ],
+  "acceptance_criteria": [
+    "All backend tests pass: test_report_planner.py, test_report_writer.py, test_report_renderer.py, test_reports.py",
+    "Total test count increases (88 existing + new report tests)",
+    "Frontend builds without errors (pnpm build passes)",
+    "Reports link appears in sidebar",
+    "/reports page shows list with status badges",
+    "/reports/new page has form to create report",
+    "/reports/[id] page shows outline, content, and actions"
+  ],
+  "verification": [
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/api && uv run ruff check .",
+    "cd apps/web && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

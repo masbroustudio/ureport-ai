@@ -1,0 +1,7 @@
+{
+  "task_id": "task-phase4-report-generator",
+  "task_description": "Implement Phase 4 Report Generator for uReport AI - creates structured PDF reports (BAB I-V) with LLM-powered planning and writing, HTML/PDF rendering via WeasyPrint/Jinja2, SSE progress streaming, and full frontend UI.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
