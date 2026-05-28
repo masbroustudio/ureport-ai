@@ -220,21 +220,15 @@ export function useChat({ conversationId, initialMessages = [] }: UseChatOptions
 
   const retry = useCallback(() => {
     if (failedMessageIndex === null) return;
-    setMessages((prev) => {
-      const userMsgIndex = failedMessageIndex - 1;
-      if (userMsgIndex < 0) return prev;
-      const userMsg = prev[userMsgIndex];
-      if (!userMsg || userMsg.role !== "user") return prev;
-      // Remove the failed pair
-      const updated = prev.slice(0, userMsgIndex);
-      setMessages(updated);
-      // Resend
-      setTimeout(() => {
-        sendMessage(userMsg.content);
-      }, 0);
-      return updated;
-    });
-  }, [failedMessageIndex, sendMessage]);
+    const userMsgIndex = failedMessageIndex - 1;
+    if (userMsgIndex < 0) return;
+    const userMsg = messages[userMsgIndex];
+    if (!userMsg || userMsg.role !== "user") return;
+    const content = userMsg.content;
+    setMessages((prev) => prev.slice(0, userMsgIndex));
+    setFailedMessageIndex(null);
+    sendMessage(content);
+  }, [failedMessageIndex, messages, sendMessage]);
 
   return { messages, setMessages, isStreaming, error, sendMessage, retry, failedMessageIndex };
 }

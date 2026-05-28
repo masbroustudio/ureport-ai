@@ -5,8 +5,6 @@ services:
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
     environment:
       - APP_ENV=production
       - DATABASE_URL=postgresql+asyncpg://ureport:${DB_PASSWORD}@postgres:5432/ureport_ai
@@ -41,8 +39,6 @@ services:
     build:
       context: ../../apps/web
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://api:8000
     depends_on:

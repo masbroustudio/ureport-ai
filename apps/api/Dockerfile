@@ -23,4 +23,7 @@ COPY alembic/ ./alembic/
 COPY alembic.ini ./
 
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Single worker: FastAPI is async, so one uvicorn process with the async event loop
+# handles concurrency via coroutines. This also keeps in-memory rate limiting correct.
+# For multi-worker deployments, move rate limiting state to Redis.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
