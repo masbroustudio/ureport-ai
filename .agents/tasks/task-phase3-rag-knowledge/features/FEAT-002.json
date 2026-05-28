@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Backend tests: comprehensive test suite for all RAG modules with mocked external services (Qdrant, fastembed)",
+  "status": "pending",
+  "steps": [
+    "1. Create test fixture files in apps/api/tests/fixtures/: a tiny PDF (use pymupdf to create programmatically in conftest), a small DOCX, and a plain TXT file.",
+    "2. Create apps/api/tests/test_loaders.py: test load_pdf, load_docx, load_txt with fixture files. Verify correct text extraction, page numbers, structure.",
+    "3. Create apps/api/tests/test_chunker.py: test chunk_text with various inputs - short text (single chunk), long text (multiple chunks), verify token counts, overlap, chunk indexes.",
+    "4. Create apps/api/tests/test_embedder.py: mock fastembed TextEmbedding model. Test embed_texts returns correct dimensions (384), test embed_query returns single vector.",
+    "5. Create apps/api/tests/test_vector_store.py: mock qdrant_client.QdrantClient. Test ensure_collection, upsert_chunks, search, delete_document.",
+    "6. Create apps/api/tests/test_ingest.py: mock loaders, chunker, embedder, vector_store, and DB session. Test successful ingestion flow and error handling (status set to 'failed').",
+    "7. Create apps/api/tests/test_knowledge_api.py: test all knowledge endpoints (POST/GET/DELETE /documents, POST /search) using the existing conftest pattern (client fixture with dependency overrides). Mock the RAG pipeline functions.",
+    "8. Create apps/api/tests/test_rag_chat.py: test the conversations create_message endpoint with kb_document_ids - mock retriever, verify RAG context is injected and citation events are emitted.",
+    "9. Run full test suite: cd apps/api && uv run pytest tests/ -v. Fix any failures."
+  ],
+  "acceptance_criteria": [
+    "All test files run successfully with `uv run pytest tests/ -v`",
+    "Tests cover: loaders (3 file types), chunker (edge cases), embedder (mocked), vector_store (mocked Qdrant), ingestion (happy + error path), knowledge API endpoints (CRUD + search), chat with RAG",
+    "No test requires external services (Qdrant, PostgreSQL, Redis)",
+    "Tests actually exercise new code paths and would fail if implementation were reverted"
+  ],
+  "verification": [
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/api && uv run ruff check ."
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
