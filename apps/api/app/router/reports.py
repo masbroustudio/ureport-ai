@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
@@ -13,7 +14,7 @@ from app.deps import get_current_user, get_db
 from app.model.report import Report, ReportSection
 from app.model.user import User
 from app.report.planner import plan_report_outline
-from app.report.renderer import render_pdf
+from app.report.renderer import STORAGE_DIR, render_pdf
 from app.report.writer import write_section
 from app.schema.report import (
     OutlineUpdate,
@@ -49,10 +50,15 @@ async def create_report(
 
     # Plan the outline
     try:
+        # Build user_request from title and custom_instructions
+        user_request = body.title
+        if body.custom_instructions:
+            user_request = f"{body.title}\n\nAdditional instructions: {body.custom_instructions}"
+
         outline = await plan_report_outline(
-            user_request=body.title,
-            file_profiles=None,
-            kb_doc_summaries=None,
+            user_request=user_request,
+            file_profiles=None,  # TODO: Resolve file_ids to file profiles in a future iteration
+            kb_doc_summaries=None,  # TODO: Resolve kb_document_ids to document summaries in a future iteration
             template_id=body.template_id,
         )
 
@@ -78,9 +84,9 @@ async def create_report(
         await db.refresh(report)
 
     except Exception as e:
-        logger.error(f"Failed to plan report outline: {e}")
+        logger.error(f"Failed to plan report outline: {e}", exc_info=True)
         report.status = "failed"
-        report.error_message = str(e)
+        report.error_message = "Report planning failed. Please try again."
         await db.commit()
         await db.refresh(report)
 
@@ -195,120 +201,138 @@ async def start_report_generation(
             detail="Report has no outline. Create outline first.",
         )
 
+    if report.status != "created":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Report generation cannot start: report is already in '{report.status}' state.",
+        )
+
     async def event_stream():
         nonlocal report
 
-        # Set status to writing
-        report.status = "writing"
-        report.progress_pct = 0
-        await db.commit()
-
-        outline = report.outline_json
-        sections_result = await db.execute(
-            select(ReportSection)
-            .where(ReportSection.report_id == report_id)
-            .order_by(ReportSection.section_order)
-        )
-        db_sections = sections_result.scalars().all()
-        total_sections = len(db_sections)
-
-        # Build section info map from outline
-        section_info_map: dict[int, tuple[dict, dict]] = {}
-        order = 0
-        for chapter in outline.get("chapters", []):
-            for section in chapter.get("sections", []):
-                section_info_map[order] = (section, chapter)
-                order += 1
-
-        completed = 0
-        for db_section in db_sections:
-            info = section_info_map.get(db_section.section_order)
-            if not info:
-                completed += 1
-                continue
-
-            section_data, chapter_data = info
-
-            db_section.status = "writing"
+        try:
+            # Set status to writing
+            report.status = "writing"
+            report.progress_pct = 0
             await db.commit()
+
+            outline = report.outline_json
+            sections_result = await db.execute(
+                select(ReportSection)
+                .where(ReportSection.report_id == report_id)
+                .order_by(ReportSection.section_order)
+            )
+            db_sections = sections_result.scalars().all()
+            total_sections = len(db_sections)
+
+            # Build section info map from outline
+            section_info_map: dict[int, tuple[dict, dict]] = {}
+            order = 0
+            for chapter in outline.get("chapters", []):
+                for section in chapter.get("sections", []):
+                    section_info_map[order] = (section, chapter)
+                    order += 1
+
+            completed = 0
+            for db_section in db_sections:
+                info = section_info_map.get(db_section.section_order)
+                if not info:
+                    completed += 1
+                    continue
+
+                section_data, chapter_data = info
+
+                db_section.status = "writing"
+                await db.commit()
+
+                try:
+                    report_context = {
+                        "report_title": report.title,
+                        "chapter_title": chapter_data.get("title", ""),
+                    }
+
+                    if section_data.get("use_rag"):
+                        try:
+                            from app.rag.retriever import retrieve
+
+                            results = await retrieve(
+                                user_id=str(current_user.id),
+                                query=f"{chapter_data.get('title', '')} {section_data['title']}",
+                                top_k=5,
+                            )
+                            if results:
+                                materials = "\n---\n".join([r.text for r in results])
+                                report_context["materials"] = materials
+                        except Exception as e:
+                            logger.warning(f"RAG retrieval failed: {e}")
+
+                    content = await write_section(section_data, report_context)
+
+                    db_section.content_markdown = content
+                    db_section.word_count = len(content.split())
+                    db_section.status = "done"
+
+                except Exception as e:
+                    logger.error(f"Failed to write section {db_section.id}: {e}")
+                    db_section.status = "failed"
+
+                completed += 1
+                pct = int((completed / total_sections) * 90)
+                report.progress_pct = pct
+                await db.commit()
+
+                # Yield progress event
+                progress_data = json.dumps({
+                    "section": db_section.section_title,
+                    "completed": completed,
+                    "total": total_sections,
+                    "pct": pct,
+                })
+                yield f"event: progress\ndata: {progress_data}\n\n"
+
+                # Small delay to avoid overwhelming the client
+                await asyncio.sleep(0.1)
+
+            # Render phase
+            yield f"event: render\ndata: {json.dumps({'message': 'Rendering PDF...'})}\n\n"
 
             try:
-                report_context = {
-                    "report_title": report.title,
-                    "chapter_title": chapter_data.get("title", ""),
-                }
+                report.status = "rendering"
+                await db.commit()
 
-                if section_data.get("use_rag"):
-                    try:
-                        from app.rag.retriever import retrieve
+                output_path = await render_pdf(str(report_id), db)
 
-                        results = await retrieve(
-                            user_id=str(current_user.id),
-                            query=f"{chapter_data.get('title', '')} {section_data['title']}",
-                            top_k=5,
-                        )
-                        if results:
-                            materials = "\n---\n".join([r.text for r in results])
-                            report_context["materials"] = materials
-                    except Exception as e:
-                        logger.warning(f"RAG retrieval failed: {e}")
+                report.pdf_path = output_path
+                report.status = "done"
+                report.progress_pct = 100
+                await db.commit()
 
-                content = await write_section(section_data, report_context)
-
-                db_section.content_markdown = content
-                db_section.word_count = len(content.split())
-                db_section.status = "done"
+                done_data = json.dumps({
+                    "report_id": str(report_id),
+                    "pdf_path": output_path,
+                    "total_sections": total_sections,
+                })
+                yield f"event: done\ndata: {done_data}\n\n"
 
             except Exception as e:
-                logger.error(f"Failed to write section {db_section.id}: {e}")
-                db_section.status = "failed"
+                logger.error(f"Rendering failed: {e}")
+                report.status = "failed"
+                report.error_message = f"Rendering failed: {e}"
+                await db.commit()
 
-            completed += 1
-            pct = int((completed / total_sections) * 90)
-            report.progress_pct = pct
-            await db.commit()
+                error_data = json.dumps({"error": str(e)})
+                yield f"event: error\ndata: {error_data}\n\n"
 
-            # Yield progress event
-            progress_data = json.dumps({
-                "section": db_section.section_title,
-                "completed": completed,
-                "total": total_sections,
-                "pct": pct,
-            })
-            yield f"event: progress\ndata: {progress_data}\n\n"
-
-            # Small delay to avoid overwhelming the client
-            await asyncio.sleep(0.1)
-
-        # Render phase
-        yield f"event: render\ndata: {json.dumps({'message': 'Rendering PDF...'})}\n\n"
-
-        try:
-            report.status = "rendering"
-            await db.commit()
-
-            output_path = await render_pdf(str(report_id), db)
-
-            report.pdf_path = output_path
-            report.status = "done"
-            report.progress_pct = 100
-            await db.commit()
-
-            done_data = json.dumps({
-                "report_id": str(report_id),
-                "pdf_path": output_path,
-                "total_sections": total_sections,
-            })
-            yield f"event: done\ndata: {done_data}\n\n"
-
-        except Exception as e:
-            logger.error(f"Rendering failed: {e}")
-            report.status = "failed"
-            report.error_message = f"Rendering failed: {e}"
-            await db.commit()
-
-            error_data = json.dumps({"error": str(e)})
-            yield f"event: error\ndata: {error_data}\n\n"
+        finally:
+            # If client disconnects or an unhandled error occurs while the report
+            # is still in an intermediate state, mark it as failed.
+            if report.status in ("writing", "rendering"):
+                report.status = "failed"
+                report.error_message = "Report generation was interrupted."
+                try:
+                    await db.commit()
+                except Exception:
+                    logger.warning("Failed to commit zombie report cleanup")
 
     return StreamingResponse(
         event_stream(),
@@ -443,6 +467,18 @@ async def download_pdf(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report file not generated yet",
+        )
+
+    # Validate that the resolved path is within STORAGE_DIR to prevent path traversal
+    resolved_path = Path(report.pdf_path).resolve()
+    storage_dir_resolved = STORAGE_DIR.resolve()
+    if not str(resolved_path).startswith(str(storage_dir_resolved)):
+        logger.error(
+            f"Path traversal attempt detected: {report.pdf_path} resolves outside STORAGE_DIR"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
         )
 
     if not os.path.exists(report.pdf_path):

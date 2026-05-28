@@ -143,7 +143,7 @@ class TestCreateReport:
             obj.outline_json = None
             obj.status = "failed"
             obj.progress_pct = 0
-            obj.error_message = "LLM returned invalid JSON"
+            obj.error_message = "Report planning failed. Please try again."
             obj.pdf_path = None
             obj.created_at = datetime(2025, 1, 15, tzinfo=timezone.utc)
             obj.updated_at = datetime(2025, 1, 15, tzinfo=timezone.utc)
@@ -159,7 +159,7 @@ class TestCreateReport:
         assert response.status_code == 201
         data = response.json()
         assert data["status"] == "failed"
-        assert data["error_message"] == "LLM returned invalid JSON"
+        assert data["error_message"] == "Report planning failed. Please try again."
 
 
 @pytest.mark.asyncio

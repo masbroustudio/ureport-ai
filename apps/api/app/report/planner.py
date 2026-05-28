@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from pathlib import Path
 
 import litellm
@@ -8,6 +9,9 @@ import yaml
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
+
+# Regex for valid template_id: only alphanumeric, underscore, hyphen
+TEMPLATE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 PLANNER_SYSTEM_PROMPT = """You are a professional report planner. Given a user request and optional context about their data/documents, generate a detailed report outline in JSON format.
 
@@ -43,8 +47,22 @@ Rules:
 """
 
 
+def validate_template_id(template_id: str) -> None:
+    """Validate template_id to prevent path traversal.
+
+    Raises:
+        ValueError: If template_id contains invalid characters.
+    """
+    if not TEMPLATE_ID_PATTERN.match(template_id):
+        raise ValueError(
+            f"Invalid template_id '{template_id}': must contain only "
+            "alphanumeric characters, underscores, and hyphens"
+        )
+
+
 def _load_template_meta(template_id: str) -> dict:
     """Load template meta.yaml file."""
+    validate_template_id(template_id)
     template_dir = Path(__file__).parent / "templates" / template_id
     meta_path = template_dir / "meta.yaml"
     if not meta_path.exists():

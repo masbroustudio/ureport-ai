@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.report import Report, ReportSection
+from app.report.planner import validate_template_id
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ async def render_pdf(report_id: str, db: AsyncSession) -> str:
         raise ValueError(f"Report {report_id} not found")
 
     template_id = report.template_id or "business_report_v1"
+    validate_template_id(template_id)
     template_dir = TEMPLATE_DIR / template_id
 
     # Load template files
