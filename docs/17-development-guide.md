@@ -4,7 +4,7 @@
 
 Panduan lengkap untuk setup development environment, menjalankan project, dan workflow pengembangan uReport AI v2.
 
-> **Status:** Dokumen ini mencerminkan kondisi project di **Phase 0 (Foundation)**. Bagian 1-6 berisi langkah-langkah yang sudah terverifikasi dan bisa langsung diikuti. Bagian 7-9 berisi panduan untuk fase berikutnya.
+> **Status:** Dokumen ini mencerminkan kondisi project di **Phase 1 (MVP Chat Multi-LLM)**. Semua bagian sudah terverifikasi dan bisa langsung diikuti.
 
 ---
 
@@ -214,32 +214,78 @@ JWT_SECRET_KEY=change-me-in-production-min-32-chars
 JWT_ALGORITHM=HS256
 ```
 
-> **Catatan Phase 0:** LLM API keys (Groq, Cerebras, Gemini) belum diperlukan. Backend saat ini berfungsi tanpa koneksi ke database atau LLM providers. Variabel di atas digunakan ketika infrastructure services sudah berjalan via Docker.
+> **Catatan Phase 0:** Variabel di atas digunakan ketika infrastructure services sudah berjalan via Docker.
+
+### LLM Provider API Keys (Phase 1)
+
+```bash
+# === LLM Provider API Keys ===
+# Minimal satu provider harus dikonfigurasi untuk fitur chat
+GROQ_API_KEY=                    # https://console.groq.com/keys
+CEREBRAS_API_KEY=                # https://cloud.cerebras.ai/
+GEMINI_API_KEY=                  # https://aistudio.google.com/apikey
+SUMOPOD_API_KEY=                 # OpenAI-compatible provider
+SUMOPOD_BASE_URL=                # Base URL untuk Sumopod API
+
+# === JWT Configuration ===
+JWT_SECRET_KEY=change-me-in-production-min-32-chars
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=10080
+```
+
+> **Catatan Phase 1:** Minimal satu LLM provider API key harus dikonfigurasi agar fitur chat berfungsi. Prioritas default: Groq > Cerebras > Gemini > Sumopod.
+
+### Cara Konfigurasi LLM Providers
+
+1. Daftar di salah satu provider:
+   - **Groq** (recommended, paling cepat): https://console.groq.com/keys
+   - **Cerebras**: https://cloud.cerebras.ai/
+   - **Google Gemini**: https://aistudio.google.com/apikey
+   - **Sumopod** (OpenAI-compatible): memerlukan API key + base URL
+
+2. Set API key di `.env`:
+   ```bash
+   GROQ_API_KEY=gsk_xxxxxxxxxxxxx
+   ```
+
+3. Restart backend server. Model yang tersedia akan muncul otomatis berdasarkan key yang dikonfigurasi.
 
 ---
 
-## 5. API Endpoints (Phase 0)
+## 5. API Endpoints
 
-### Endpoints yang Tersedia
+### Phase 0 - Foundation
 
 | Method | Path | Deskripsi | Status |
 |--------|------|-----------|--------|
 | GET | `/healthz` | Health check | Aktif |
 | GET | `/readyz` | Readiness check | Aktif |
-| POST | `/api/v1/auth/signup` | User registration | Placeholder (TODO) |
-| POST | `/api/v1/auth/signin` | User login | Placeholder (TODO) |
-| GET | `/api/v1/auth/me` | Get current user | Placeholder (TODO) |
-| GET | `/api/v1/conversations/` | List conversations | Placeholder (TODO) |
-| POST | `/api/v1/conversations/` | Create conversation | Placeholder (TODO) |
-| GET | `/api/v1/files/` | List files | Placeholder (TODO) |
-| POST | `/api/v1/files/` | Upload file | Placeholder (TODO) |
+| GET | `/api/v1/files/` | List files | Placeholder |
+| POST | `/api/v1/files/` | Upload file | Placeholder |
+
+### Phase 1 - MVP Chat Multi-LLM
+
+| Method | Path | Deskripsi | Auth |
+|--------|------|-----------|------|
+| POST | `/api/v1/auth/signup` | Registrasi user baru | Tidak |
+| POST | `/api/v1/auth/signin` | Login user | Tidak |
+| GET | `/api/v1/auth/me` | Profil user saat ini | Ya |
+| GET | `/api/v1/conversations/` | List semua percakapan | Ya |
+| POST | `/api/v1/conversations/` | Buat percakapan baru | Ya |
+| GET | `/api/v1/conversations/{id}` | Detail percakapan | Ya |
+| PATCH | `/api/v1/conversations/{id}` | Update percakapan | Ya |
+| DELETE | `/api/v1/conversations/{id}` | Hapus percakapan | Ya |
+| GET | `/api/v1/conversations/{id}/messages` | List pesan dalam percakapan | Ya |
+| POST | `/api/v1/conversations/{id}/messages` | Kirim pesan (SSE streaming) | Ya |
 
 ### Frontend Pages
 
 | Path | Deskripsi |
 |------|-----------|
 | `/` | Landing page |
-| `/chat` | Chat interface (placeholder) |
+| `/signin` | Halaman login |
+| `/signup` | Halaman registrasi |
+| `/chat` | Chat interface dengan model selector |
+| `/settings` | Halaman pengaturan user |
 
 ---
 
@@ -248,13 +294,36 @@ JWT_ALGORITHM=HS256
 ### Menjalankan Tests
 
 ```bash
-# Backend tests
+# Backend tests (14 tests: auth, conversations, health)
 cd apps/api
 uv run pytest tests/ -v
 
 # Atau dari root menggunakan Make
 make api-test
 ```
+
+### Cara Menjalankan Fitur Chat End-to-End
+
+1. Pastikan infrastructure berjalan (`docker compose -f infra/docker/compose.dev.yml up -d`)
+2. Jalankan migrasi database:
+   ```bash
+   cd apps/api
+   uv run alembic upgrade head
+   ```
+3. Start backend:
+   ```bash
+   cd apps/api
+   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+4. Start frontend:
+   ```bash
+   cd apps/web
+   pnpm dev
+   ```
+5. Buka http://localhost:3000/signup untuk registrasi
+6. Setelah login, buka http://localhost:3000/chat
+7. Pilih model dari dropdown (model yang muncul tergantung API key yang dikonfigurasi)
+8. Ketik pesan dan tekan Enter untuk mulai chat
 
 ### Linting
 

@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/2"
     JWT_SECRET_KEY: str = _JWT_SECRET_DEFAULT
     JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
+    GROQ_API_KEY: str = ""
+    CEREBRAS_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    SUMOPOD_API_KEY: str = ""
+    SUMOPOD_BASE_URL: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

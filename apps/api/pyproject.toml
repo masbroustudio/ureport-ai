@@ -17,6 +17,10 @@ dependencies = [
     "python-multipart",
     "qdrant-client",
     "httpx",
+    "python-jose[cryptography]",
+    "argon2-cffi",
+    "asyncpg",
+    "email-validator",
 ]
 
 [dependency-groups]
