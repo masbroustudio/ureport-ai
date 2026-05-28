@@ -23,6 +23,10 @@ __pycache__/
 venv/
 .venv/
 *.egg-info/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+alembic/versions/__pycache__/
 
 # IDE
 .vscode/
@@ -43,6 +47,9 @@ prisma/migrations/
 
 # Testing
 coverage/
+
+# Vercel
+.vercel/
 
 # Misc
 *.tsbuildinfo

@@ -51,44 +51,48 @@ uReport AI adalah aplikasi chat berbasis AI yang dirancang khusus untuk:
 
 ### Prerequisites
 
+- Python 3.12+ (via pyenv recommended)
 - Node.js 20+ & pnpm
-- Python 3.12+ & uv
-- Docker & Docker Compose
-- API keys (Groq, Cerebras, atau Gemini - minimal satu)
+- uv (Python package manager)
+- Docker & Docker Compose (for infrastructure services)
+- API keys for LLM providers (optional for Phase 0)
 
 ### Setup
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/YOUR_USERNAME/ureport-ai.git
+git clone https://github.com/masbroustudio/ureport-ai.git
 cd ureport-ai
 
-# 2. Start infrastructure
-docker compose -f infra/docker/compose.dev.yml up -d
+# 2. Install dependencies
+cd apps/api && uv sync
+cd ../../apps/web && pnpm install
+cd ../..
 
 # 3. Setup environment
 cp .env.example .env
-# Edit .env dengan API keys kamu
 
-# 4. Install frontend dependencies
-cd apps/web && pnpm install
+# 4. Start infrastructure (requires Docker)
+docker compose -f infra/docker/compose.dev.yml up -d
 
-# 5. Install backend dependencies
-cd apps/api && uv sync
+# 5. Start backend
+cd apps/api && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# 6. Run database migrations
-cd apps/api && alembic upgrade head
+# 6. Start frontend (new terminal)
+cd apps/web && pnpm dev
 
-# 7. Start development
-pnpm --filter web dev          # Terminal 1: Next.js
-cd apps/api && uvicorn app.main:app --reload  # Terminal 2: FastAPI
+# 7. Run tests
+make api-test
 ```
 
 ### Access
 
-- **App:** http://localhost:3000
-- **API Docs:** http://localhost:8000/docs
+- **Frontend:** http://localhost:3000
+- **Chat Page:** http://localhost:3000/chat
+- **API Docs (Swagger):** http://localhost:8000/docs
+- **Health Check:** http://localhost:8000/healthz
 - **MinIO Console:** http://localhost:9001
+- **Qdrant Dashboard:** http://localhost:6333/dashboard
 
 ## Documentation
 
@@ -122,21 +126,39 @@ Dokumentasi lengkap tersedia di [`MASTERPLAN.md`](./MASTERPLAN.md) dan folder `d
 ureport-ai/
 ├── apps/
 │   ├── web/                # Next.js 15 frontend
+│   │   └── src/
+│   │       ├── app/        # App Router pages
+│   │       ├── components/ # UI components (shadcn/ui)
+│   │       ├── lib/        # Utility functions
+│   │       └── styles/     # Global CSS
 │   └── api/                # FastAPI backend
+│       ├── app/
+│       │   ├── router/     # API route handlers
+│       │   ├── model/      # SQLAlchemy models (placeholder)
+│       │   ├── schema/     # Pydantic schemas (placeholder)
+│       │   ├── main.py     # FastAPI app entry point
+│       │   └── settings.py # Configuration
+│       ├── alembic/        # Database migrations
+│       └── tests/          # Backend tests
 ├── packages/
-│   ├── shared-types/       # TypeScript types (auto-gen dari OpenAPI)
-│   └── prompts/            # Prompt library (markdown)
+│   ├── shared-types/       # TypeScript types (planned)
+│   └── prompts/            # Prompt library (planned)
 ├── infra/
 │   └── docker/             # Docker Compose configs
+│       ├── compose.dev.yml # Development infrastructure
+│       └── compose.prod.yml# Production setup
 ├── docs/                   # Project documentation (17 files + decisions/)
 ├── scripts/                # Utility scripts
 ├── .kiro/                  # Steering & config
+├── .env.example            # Environment variables template
+├── Makefile                # Development commands
 ├── MASTERPLAN.md           # Project masterplan
 └── README.md
 ```
 
 ## Development Phases
 
+- **Phase 0 (Current):** Foundation - Project structure, backend skeleton, frontend skeleton, infrastructure configs
 - **Phase 1:** MVP - Chat + File Upload + Basic Analysis
 - **Phase 2:** Charts/Tables + Multi-LLM Support
 - **Phase 3:** RAG + Report Generation + PDF Export
