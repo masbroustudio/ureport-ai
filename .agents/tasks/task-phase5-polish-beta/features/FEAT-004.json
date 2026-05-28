@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Production infrastructure: Dockerfiles for API and Web, Docker Compose production config, Privacy/Terms pages, footer links on landing page. Covers task items #7 and #10.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Create apps/api/Dockerfile - Multi-stage build: Stage 1 (builder) uses python:3.12-slim, installs uv, copies pyproject.toml and uv.lock, runs `uv sync --no-dev`. Stage 2 (runtime) uses python:3.12-slim, installs WeasyPrint system deps (libpango, libcairo, etc.), copies virtual env from builder, copies app/ directory. Sets CMD to uvicorn app.main:app --host 0.0.0.0 --port 8000. Exposes 8000.",
     "Step 2: Create apps/web/Dockerfile - Multi-stage build: Stage 1 (deps) uses node:22-alpine, installs pnpm, copies package.json and pnpm-lock.yaml, runs pnpm install --frozen-lockfile. Stage 2 (builder) copies source, runs pnpm build. Stage 3 (runner) uses node:22-alpine, copies .next/standalone and .next/static and public. CMD node server.js. Exposes 3000.",
@@ -32,5 +32,5 @@
     "cd apps/api && uv run ruff check ."
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All steps implemented successfully. pnpm build passes with all pages (including /privacy and /terms) generating static content. Ruff check is clean. The standalone output mode is configured for Docker deployment. Marketing layout uses a route group (marketing) to avoid affecting the existing app layout."
 }
