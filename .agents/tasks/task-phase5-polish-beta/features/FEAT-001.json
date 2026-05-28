@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Environment setup - install all dependencies, verify existing tests pass, verify pnpm build works, establish baseline for Phase 5 development.",
+  "status": "completed",
+  "steps": [
+    "Run `uv sync` in apps/api/ to install Python dependencies",
+    "Run `pnpm install` in apps/web/ to install Node.js dependencies",
+    "Run `uv run pytest tests/ -v` in apps/api/ and confirm all 127 tests pass",
+    "Run `uv run ruff check .` in apps/api/ and confirm no lint errors",
+    "Run `pnpm build` in apps/web/ and confirm build succeeds"
+  ],
+  "acceptance_criteria": [
+    "All 127 existing pytest tests pass",
+    "Ruff check reports no errors",
+    "pnpm build succeeds without errors"
+  ],
+  "verification": [
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/api && uv run ruff check .",
+    "cd apps/web && pnpm build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 127 tests pass (3.78s). 20 RuntimeWarnings about unawaited coroutines in mocks (pre-existing, non-blocking). Ruff check clean. pnpm build succeeds (11 pages generated). Dependencies already installed from prior phases - uv sync and pnpm install were no-ops."
+}
