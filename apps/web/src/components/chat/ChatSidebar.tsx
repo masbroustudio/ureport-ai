@@ -101,6 +101,12 @@ export function ChatSidebar() {
           Knowledge Base
         </Link>
         <Link
+          href="/reports"
+          className="block px-3 py-2 rounded-md hover:bg-accent text-sm text-muted-foreground"
+        >
+          Reports
+        </Link>
+        <Link
           href="/settings"
           className="block px-3 py-2 rounded-md hover:bg-accent text-sm text-muted-foreground"
         >
