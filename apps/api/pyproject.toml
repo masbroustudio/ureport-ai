@@ -31,6 +31,7 @@ dependencies = [
     "weasyprint",
     "jinja2",
     "markdown",
+    "sentry-sdk[fastapi]",
 ]
 
 [dependency-groups]

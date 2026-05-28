@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Backend enhancements: Rate limiting middleware, metrics endpoint, request ID middleware, structured logging, Sentry integration. Covers task items #8 (Monitoring & Health) and #9 (Rate Limiting).",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Create apps/api/app/middleware/__init__.py",
+    "Step 2: Create apps/api/app/middleware/rate_limit.py - In-memory rate limiter middleware class. Uses a dict keyed by user_id with timestamps. Two tiers: general API (60 req/min) and report generation (10 req/hour). Returns 429 with Retry-After header when exceeded. Include a cleanup mechanism to remove expired entries. Apply via decorator or path-based config.",
+    "Step 3: Create apps/api/app/middleware/request_id.py - Middleware that generates a UUID X-Request-ID header if not present in request, adds it to response headers, and stores in request.state for logging.",
+    "Step 4: Create apps/api/app/middleware/logging_middleware.py - Structured JSON logging middleware. Configure Python logging to output JSON format. Log method, path, status_code, duration_ms, request_id for each request. Replace any print() statements in the codebase with proper logger calls.",
+    "Step 5: Add a GET /metrics endpoint in apps/api/app/router/metrics.py - stub placeholder that returns basic counters (requests_total, requests_active) as plain text in Prometheus exposition format. Register in main.py.",
+    "Step 6: Update apps/api/app/main.py to register the three middlewares (rate_limit, request_id, logging) and the metrics router.",
+    "Step 7: Add sentry-sdk[fastapi] to apps/api/pyproject.toml dependencies. In main.py, conditionally initialize Sentry if SENTRY_DSN env var is set. Add SENTRY_DSN field (default empty string) to settings.py.",
+    "Step 8: Create apps/api/tests/test_rate_limiter.py - Unit tests for the rate limiter: test normal requests pass, test exceeding 60/min returns 429 with Retry-After header, test report endpoint has 10/hr limit, test different users have independent limits, test cleanup of expired entries.",
+    "Step 9: Create apps/api/tests/test_request_id.py - Test that X-Request-ID is generated and returned in response headers.",
+    "Step 10: Run `uv run pytest tests/ -v` to confirm all tests pass. Run `uv run ruff check .` and fix any issues."
+  ],
+  "acceptance_criteria": [
+    "Rate limiter returns 429 with Retry-After header when limits exceeded",
+    "X-Request-ID header is generated for every request and included in response",
+    "GET /metrics returns stub Prometheus-format metrics",
+    "Sentry initializes only when SENTRY_DSN is configured",
+    "All new and existing tests pass",
+    "Ruff check clean"
+  ],
+  "verification": [
+    "cd apps/api && uv run pytest tests/ -v",
+    "cd apps/api && uv run ruff check ."
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

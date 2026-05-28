@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     FILE_STORAGE_PATH: str = "./storage/uploads"
     DATA_SANDBOX_TIMEOUT_SECONDS: int = 30
     MAX_UPLOAD_SIZE_MB: int = 50
+    SENTRY_DSN: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
