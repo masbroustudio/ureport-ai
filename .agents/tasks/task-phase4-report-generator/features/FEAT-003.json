@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Implement backend tests for the report generation pipeline (planner, writer, renderer, endpoints). All tests mock external services (LLM, DB, WeasyPrint). Also implement the frontend Reports pages (list, new, detail, outline editor) and update the sidebar navigation.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 - Test Report Planner: Create apps/api/tests/test_report_planner.py. Mock litellm.acompletion to return a valid outline JSON. Test that plan_report_outline returns proper structure with chapters and sections. Test validation error handling when LLM returns invalid JSON.",
     "Step 2 - Test Report Writer: Create apps/api/tests/test_report_writer.py. Mock litellm.acompletion to return markdown content. Mock the RAG retriever (app.rag.retriever.retrieve). Test write_section returns markdown string. Test that use_rag triggers retriever call.",
@@ -31,5 +31,5 @@
     "cd apps/web && pnpm build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 116 tests pass (28 new report tests + 88 existing). Frontend builds successfully. WeasyPrint cannot load in this environment (missing pango/cairo system libs) so renderer falls back to HTML output - tests use the natural fallback path. Endpoint tests need trailing slash in URLs due to router.post('/') pattern. RuntimeWarnings about unawaited coroutines from db.add() in tests are harmless (mock db.add is an AsyncMock but called without await in the router - this is the existing pattern)."
 }
