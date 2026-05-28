@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        {{ styles_css }}
+    </style>
+</head>
+<body>
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <h1>{{ title }}</h1>
+        {% if subtitle %}
+        <div class="subtitle">{{ subtitle }}</div>
+        {% endif %}
+        {% if author %}
+        <div class="author">{{ author }}</div>
+        {% endif %}
+        <div class="date">{{ date }}</div>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <h2>Daftar Isi</h2>
+        <ul>
+            {% for chapter in chapters %}
+            <li class="toc-chapter">{{ chapter.number }} {{ chapter.title }}</li>
+            {% for section in chapter.sections %}
+            <li>&nbsp;&nbsp;&nbsp;&nbsp;{{ section.title }}</li>
+            {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Chapters -->
+    {% for chapter in chapters %}
+    <div class="chapter" data-chapter-title="{{ chapter.number }} {{ chapter.title }}">
+        <h2>{{ chapter.number }} {{ chapter.title }}</h2>
+        {% for section in chapter.sections %}
+        <div class="section">
+            {{ section.content_html }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- References -->
+    <div class="references">
+        <h2>Daftar Pustaka</h2>
+        <p><em>Referensi akan ditambahkan berdasarkan sumber yang digunakan.</em></p>
+    </div>
+</body>
+</html>

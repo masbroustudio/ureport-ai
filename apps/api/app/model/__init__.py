@@ -12,6 +12,7 @@ from app.model.usage_log import UsageLog  # noqa: E402
 from app.model.file import File  # noqa: E402
 from app.model.knowledge_document import KnowledgeDocument  # noqa: E402
 from app.model.kb_chunk import KBChunk  # noqa: E402
+from app.model.report import Report, ReportSection  # noqa: E402
 
 __all__ = [
     "Base",
@@ -22,4 +23,6 @@ __all__ = [
     "File",
     "KnowledgeDocument",
     "KBChunk",
+    "Report",
+    "ReportSection",
 ]

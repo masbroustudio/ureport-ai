@@ -1,0 +1,18 @@
+id: business_report_v1
+name: "Laporan Bisnis"
+description: "Template laporan bisnis profesional dengan format bab standar"
+default_chapters:
+  - "Pendahuluan"
+  - "Tinjauan Pustaka"
+  - "Metodologi"
+  - "Pembahasan"
+  - "Kesimpulan & Saran"
+fonts:
+  - "Inter"
+  - "Source Serif Pro"
+page_size: A4
+margins:
+  top: 25mm
+  bottom: 25mm
+  left: 30mm
+  right: 25mm

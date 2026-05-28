@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the backend Report Generator: database models, migration, report planner, writer, renderer, templates, schemas, and API endpoints with SSE progress streaming. This is the core Phase 4 backend.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Step 1 - Database Models: Create apps/api/app/model/report.py with two models: (a) Report (id UUID PK, user_id FK users.id, conversation_id FK conversations.id nullable, title String, subtitle String nullable, author String nullable, template_id String default 'business_report_v1', outline_json JSONB nullable, status String default 'created' -- values: created/planning/writing/rendering/done/failed, progress_pct Integer default 0, error_message Text nullable, pdf_path Text nullable, created_at DateTime server_default now, updated_at DateTime server_default now onupdate now). (b) ReportSection (id UUID PK, report_id FK reports.id, chapter_number String e.g. 'BAB I', chapter_title String, section_order Integer, section_title String, content_markdown Text nullable, status String default 'pending' -- values: pending/writing/done/failed, word_count Integer default 0, created_at DateTime server_default now, updated_at DateTime server_default now onupdate now). Register both in apps/api/app/model/__init__.py.",
     "Step 2 - Alembic Migration: Create apps/api/alembic/versions/004_add_reports_tables.py following the pattern of 003_add_knowledge_tables.py. revision='004', down_revision='003'. Create 'reports' table and 'report_sections' table with all columns, indexes on user_id and report_id.",

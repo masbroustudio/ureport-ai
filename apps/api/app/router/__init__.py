@@ -1,3 +1,3 @@
-from app.router import auth, conversations, files, knowledge
+from app.router import auth, conversations, files, knowledge, reports
 
-__all__ = ["auth", "conversations", "files", "knowledge"]
+__all__ = ["auth", "conversations", "files", "knowledge", "reports"]
